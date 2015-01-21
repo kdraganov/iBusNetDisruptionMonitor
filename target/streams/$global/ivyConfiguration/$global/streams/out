@@ -1,0 +1,9 @@
+[debug] Other repositories:
+[debug] 	FileRepository(publish-m2-local,FileConfiguration(true,None),Patterns(ivyPatterns=List(), artifactPatterns=List(C:/Users/Konstantin/.m2/repository/[organisation]/[module](_[scalaVersion])(_[sbtVersion])/[revision]/[artifact]-[revision](-[classifier]).[ext]), isMavenCompatible=true, descriptorOptional=false, skipConsistencyCheck=false))
+[debug] Default repositories:
+[debug] 	Raw(ProjectResolver(inter-project, mapped: ))
+[debug] 	FileRepository(local,FileConfiguration(true,None),Patterns(ivyPatterns=List(${ivy.home}/local/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]), artifactPatterns=List(${ivy.home}/local/[organisation]/[module]/(scala_[scalaVersion]/)(sbt_[sbtVersion]/)[revision]/[type]s/[artifact](-[classifier]).[ext]), isMavenCompatible=false, descriptorOptional=false, skipConsistencyCheck=false))
+[debug] 	public: http://repo1.maven.org/maven2/
+[debug] Using inline dependencies specified in Scala.
+[warn] Binary version (2.10) for dependency org.scala-lang#scala-reflect;2.10.0
+[warn] 	in ibusmonitor#ibusmonitor$sources_javadoc_2.11;1.0 differs from Scala binary version in project (2.11).
