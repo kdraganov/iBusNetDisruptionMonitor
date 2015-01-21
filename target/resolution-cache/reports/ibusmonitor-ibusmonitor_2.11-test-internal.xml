@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="ivy-report.xsl"?>
+<ivy-report version="1.0">
+	<info
+		organisation="ibusmonitor"
+		module="ibusmonitor_2.11"
+		revision="1.0"
+		conf="test-internal"
+		confs="compile, runtime, test, provided, optional, compile-internal, runtime-internal, test-internal, plugin, sources, docs, pom, scala-tool"
+		date="20150120190926"/>
+	<dependencies>
+		<module organisation="org.scalatest" name="scalatest_2.10">
+			<revision name="2.0" status="release" pubdate="20131031161328" resolver="public" artresolver="public" homepage="http://www.scalatest.org" downloaded="true" searched="true" default="false" conf="default, compile, runtime, default(compile), master" position="1">
+				<license name="the Apache License, ASL Version 2.0" url="http://www.apache.org/licenses/LICENSE-2.0"/>
+				<metadata-artifact status="successful" details="" size="7154" time="455" location="C:\Users\Konstantin\.ivy2\cache\org.scalatest\scalatest_2.10\ivy-2.0.xml" searched="true" original-local-location="C:\Users\Konstantin\.ivy2\cache\org.scalatest\scalatest_2.10\ivy-2.0.xml.original" origin-is-local="false" origin-location="http://repo1.maven.org/maven2/org/scalatest/scalatest_2.10/2.0/scalatest_2.10-2.0.pom"/>
+				<caller organisation="ibusmonitor" name="ibusmonitor_2.11" conf="test, compile, provided, test-internal, runtime, optional" rev="2.0" rev-constraint-default="2.0" rev-constraint-dynamic="2.0" callerrev="1.0"/>
+				<artifacts>
+					<artifact name="scalatest_2.10" type="jar" ext="jar" status="successful" details="" size="7158439" time="37766" location="C:\Users\Konstantin\.ivy2\cache\org.scalatest\scalatest_2.10\jars\scalatest_2.10-2.0.jar">
+						<origin-location is-local="false" location="http://repo1.maven.org/maven2/org/scalatest/scalatest_2.10/2.0/scalatest_2.10-2.0.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scala-lang" name="scala-reflect">
+			<revision name="2.10.0" status="release" pubdate="20121220072932" resolver="public" artresolver="public" homepage="http://www.scala-lang.org/" downloaded="true" searched="true" default="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="2">
+				<license name="BSD-like" url="http://www.scala-lang.org/downloads/license.html
+			"/>
+				<metadata-artifact status="successful" details="" size="1840" time="440" location="C:\Users\Konstantin\.ivy2\cache\org.scala-lang\scala-reflect\ivy-2.10.0.xml" searched="true" original-local-location="C:\Users\Konstantin\.ivy2\cache\org.scala-lang\scala-reflect\ivy-2.10.0.xml.original" origin-is-local="false" origin-location="http://repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.10.0/scala-reflect-2.10.0.pom"/>
+				<caller organisation="org.scalatest" name="scalatest_2.10" conf="default, compile, runtime, master" rev="2.10.0" rev-constraint-default="2.10.0" rev-constraint-dynamic="2.10.0" callerrev="2.0"/>
+				<artifacts>
+					<artifact name="scala-reflect" type="jar" ext="jar" status="successful" details="" size="3149351" time="21357" location="C:\Users\Konstantin\.ivy2\cache\org.scala-lang\scala-reflect\jars\scala-reflect-2.10.0.jar">
+						<origin-location is-local="false" location="http://repo1.maven.org/maven2/org/scala-lang/scala-reflect/2.10.0/scala-reflect-2.10.0.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+		</module>
+		<module organisation="org.scala-lang" name="scala-library">
+			<revision name="2.11.5" status="release" pubdate="20150107003212" resolver="sbt-chain" artresolver="sbt-chain" homepage="http://www.scala-lang.org/" extra-info.apiURL="http://www.scala-lang.org/api/2.11.5/" downloaded="false" searched="false" default="false" conf="default, compile, runtime, default(compile), master, master(*), runtime(*), compile(*)" position="0">
+				<license name="BSD 3-Clause" url="http://www.scala-lang.org/license.html"/>
+				<metadata-artifact status="no" details="" size="2685" time="0" location="C:\Users\Konstantin\.ivy2\cache\org.scala-lang\scala-library\ivy-2.11.5.xml" searched="false" origin-is-local="false" origin-location="http://repo1.maven.org/maven2/org/scala-lang/scala-library/2.11.5/scala-library-2.11.5.pom"/>
+				<caller organisation="org.scalatest" name="scalatest_2.10" conf="default, compile, runtime, master" rev="2.10.0" rev-constraint-default="2.10.0" rev-constraint-dynamic="2.10.0" callerrev="2.0"/>
+				<caller organisation="ibusmonitor" name="ibusmonitor_2.11" conf="test, compile, provided, test-internal, runtime, optional" rev="2.11.5" rev-constraint-default="2.11.5" rev-constraint-dynamic="2.11.5" callerrev="1.0"/>
+				<caller organisation="org.scala-lang" name="scala-reflect" conf="compile, runtime" rev="2.10.0" rev-constraint-default="2.10.0" rev-constraint-dynamic="2.10.0" callerrev="2.10.0"/>
+				<artifacts>
+					<artifact name="scala-library" type="jar" ext="jar" status="no" details="" size="5576839" time="0" location="C:\Users\Konstantin\.ivy2\cache\org.scala-lang\scala-library\jars\scala-library-2.11.5.jar">
+						<origin-location is-local="false" location="http://repo1.maven.org/maven2/org/scala-lang/scala-library/2.11.5/scala-library-2.11.5.jar"/>
+					</artifact>
+				</artifacts>
+			</revision>
+			<revision name="2.10.0" evicted="latest-revision" evicted-reason="" downloaded="false" searched="false" conf="master(*), compile, runtime(*), runtime, compile(*), master" position="-1">
+				<evicted-by rev="2.11.5"/>
+				<caller organisation="org.scalatest" name="scalatest_2.10" conf="default, compile, runtime, master" rev="2.10.0" rev-constraint-default="2.10.0" rev-constraint-dynamic="2.10.0" callerrev="2.0"/>
+				<caller organisation="org.scala-lang" name="scala-reflect" conf="compile, runtime" rev="2.10.0" rev-constraint-default="2.10.0" rev-constraint-dynamic="2.10.0" callerrev="2.10.0"/>
+				<artifacts>
+				</artifacts>
+			</revision>
+		</module>
+	</dependencies>
+</ivy-report>
