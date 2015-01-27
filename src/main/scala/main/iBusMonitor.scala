@@ -3,8 +3,9 @@ package main
 import java.io.{File}
 import java.nio.file._
 import java.text.SimpleDateFormat
-import environment.Observation
 import java.util.Date
+import lbsl.Observation
+
 import scala.io.Source
 
 import collection.JavaConversions._
@@ -56,7 +57,7 @@ class iBusMonitor(directoryToMonitor: String, dateFormat: String) extends Thread
       var ignore = true
       var source = Source.fromFile(file.getAbsolutePath)
       for (line <- source.getLines()) {
-        if (ignore) ignore = false else println(file.getAbsolutePath + " => has been read") //parseLine(line)
+        if (ignore) ignore = false else println(parseLine(line)) //parseLine(line)
       }
       source.close
 
@@ -75,19 +76,18 @@ class iBusMonitor(directoryToMonitor: String, dateFormat: String) extends Thread
 
     val observation: Observation = new Observation(vehicleId, timeOfData, tripType, tokens(9),tokens(10),scheduleDeviation, longitude, latitude, eventId)
     print(observation.getVehicleId + "|")
-    print(observation.getEventId + "|")
+//    print(observation.getEventId + "|")
     print(observation.getLastStop + "|")
-    print(observation.getLatitude + "|")
-    print(observation.getLongitude + "|")
+//    print(observation.getLatitude + "|")
+//    print(observation.getLongitude + "|")
     print(observation.getRoute + "|")
     print(observation.getScheduleDeviation + "|")
     print(dateFormatter.format(observation.getTimeOfData) + "|")
-    print(observation.getTripType + "|")
+    println(observation.getTripType + "|")
 
 //    print(tokens.length + " => ")
 //    for (cell <- tokens){
 //      print(cell + "|")
 //    }
-    println()
   }
 }

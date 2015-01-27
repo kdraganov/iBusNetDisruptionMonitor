@@ -1,4 +1,4 @@
-package environment
+package lbsl
 
 import java.util.Date
 /**
@@ -7,7 +7,6 @@ import java.util.Date
 class Observation(vehicleId: Integer, timeOfData: Date, tripType: Integer, route: String, lastStop: String, scheduleDeviation: Integer, longitude: Double, latitude: Double, eventId: Integer) {
 
   def getVehicleId : Integer = vehicleId
-
   def getTimeOfData : Date = timeOfData
   def getTripType : Integer = tripType
   def getRoute : String = route
