@@ -18,8 +18,14 @@ class Network {
   private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
 
-  def calculateDisruptions(): Unit ={
+  def calculateDisruptions(): Unit = {
     println("BEGIN:Calculating disruptions...")
+        for ((routeNumber, route) <- routeMap) {
+          if (route.isRouteActive()) {
+            route.updateState()
+            println(route.getContractRoute + " - average schedule deviation change = " + route.getAverageDisruptionTime / 60 + " minutes")
+          }
+        }
     println("FINISH:Calculating disruptions")
   }
 
@@ -72,14 +78,20 @@ class Network {
 
   private def loadRoutes(): Unit = {
     val source = Source.fromFile(routesListFile.getAbsolutePath)
+    //    var routeKey: String = "1"
+    //    var route: Route = new Route("1")
     var routeKey: String = null
-    var route: Route = new Route("1")
+    var route: Route = null
     for (line <- source.getLines().drop(1)) {
       val tokens: Array[String] = line.split(routesListFileDelimeter)
       if (tokens.length >= 11) {
-        if (routeKey != tokens(0)) {
+        if (route == null) {
           routeKey = tokens(0)
+          route = new Route(routeKey)
+        }
+        if (routeKey != tokens(0)) {
           routeMap.put(routeKey, route)
+          routeKey = tokens(0)
           route = new Route(tokens(0))
         }
         val direction = if (Integer.parseInt(tokens(1)) % 2 == 0) Route.inbound else Route.outbound

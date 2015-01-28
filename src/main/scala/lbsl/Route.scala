@@ -1,5 +1,6 @@
 package lbsl
 
+import java.text.SimpleDateFormat
 import java.util
 
 import scala.collection.mutable
@@ -11,12 +12,50 @@ import scala.collection.mutable
 
 class Route(private val contractRoute: String) {
 
+  val dateFormatter: SimpleDateFormat = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss")
+
   private var averageScheduleDeaviation: Double = 0
   private val outboundBusStopSequence: util.ArrayList[String] = new util.ArrayList[String]()
   private val inboundBusStopSequence: util.ArrayList[String] = new util.ArrayList[String]()
   //  private var observationList: List = null //observation list for this route
 
   private val loggedBussesMap: mutable.HashMap[Integer, ObservationList[Observation]] = new mutable.HashMap[Integer, ObservationList[Observation]]()
+
+  def isRouteActive(): Boolean = {
+    loggedBussesMap.size > 1
+  }
+
+  def updateState(): Unit = {
+    val scheduleDeviationChangeList: Array[Double] = new Array[Double](loggedBussesMap.size)
+    var counter = 0
+    for ((busId, observationList) <- loggedBussesMap) {
+      if (observationList.size() >= 2) {
+        // else not enough data
+        var average: Double = 0
+        var sum: Double = 0
+        var weightSum: Double = 0
+        var prevObservation = observationList.get(0)
+
+        for (index <- 1 until observationList.size()) {
+          val observation = observationList.get(index)
+          val weight = Math.pow(3, index) / 1000
+          weightSum += weight
+          sum += weight * (observation.getScheduleDeviation - prevObservation.getScheduleDeviation)
+          prevObservation = observation
+
+          //        println(busId + " - " + dateFormatter.format(observationList.get(index).getTimeOfData))
+        }
+        scheduleDeviationChangeList(counter) = sum / weightSum
+        counter += 1
+      }
+    }
+    var sum: Double = 0
+    for (value: Double <- scheduleDeviationChangeList) {
+      sum += value
+    }
+    averageScheduleDeaviation = sum / scheduleDeviationChangeList.length
+
+  }
 
   def addObservation(observation: Observation): Unit = {
     val observationList = loggedBussesMap.getOrElse(observation.getVehicleId, new ObservationList[Observation]())
@@ -63,6 +102,7 @@ class Route(private val contractRoute: String) {
 
   def getContractRoute = contractRoute
 
+  def getAverageDisruptionTime = averageScheduleDeaviation
 }
 
 object Route {

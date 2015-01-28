@@ -61,7 +61,7 @@ class iBusMonitor(
       }
       key.reset()
       if (update) {
-       busNetwork.calculateDisruptions()
+        busNetwork.calculateDisruptions()
       }
       Thread.sleep(sleepInterval)
     }
@@ -85,22 +85,25 @@ class iBusMonitor(
 
   def processFeed(feed: String): Unit = {
     val tokens: Array[String] = feed.split(feedDelimiter)
-    val vehicleId: Integer = Integer.parseInt(tokens(0))
-    val tripType: Integer = Integer.parseInt(tokens(8))
     val scheduleDeviation: Integer = Integer.parseInt(tokens(11))
-    val longitude: Double = tokens(12).toDouble
-    val latitude: Double = tokens(13) toDouble
-    val eventId: Integer = Integer.parseInt(tokens(14))
-    val timeOfData: Date = dateFormatter.parse(tokens(3))
-    val routeNumber = tokens(9)
-    val lastStop = tokens(10)
-    val observation: Observation = new Observation(vehicleId, timeOfData, tripType, routeNumber, lastStop, scheduleDeviation, longitude, latitude, eventId)
-    //TODO: PROBLEM - WHAT TO DO HERE AND WHERE TO STORE THE INFO SHOULD WE DISCARD OLD INFO
-    val route = busNetwork.getRoute(routeNumber)
-    if (route != null) {
-      route.addObservation(observation)
+    val tripType: Integer = Integer.parseInt(tokens(8))
+    // ignore invalid readings
+    if (scheduleDeviation != -2147483645 && lbsl.TripType.isActiveTrip(tripType)) {
+      val vehicleId: Integer = Integer.parseInt(tokens(0))
+      val longitude: Double = tokens(12).toDouble
+      val latitude: Double = tokens(13) toDouble
+      val eventId: Integer = Integer.parseInt(tokens(14))
+      val timeOfData: Date = dateFormatter.parse(tokens(3))
+      val routeNumber = tokens(9)
+      val lastStop = tokens(10)
+      val observation: Observation = new Observation(vehicleId, timeOfData, tripType, routeNumber, lastStop, scheduleDeviation, longitude, latitude, eventId)
+      //TODO: PROBLEM - WHAT TO DO HERE AND WHERE TO STORE THE INFO SHOULD WE DISCARD OLD INFO
+      val route = busNetwork.getRoute(routeNumber)
+      if (route != null) {
+        route.addObservation(observation)
+      }
     }
-    //Add to route
+
 
 
     //    print(observation.getVehicleId + "|")
