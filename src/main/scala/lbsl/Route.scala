@@ -25,6 +25,23 @@ class Route(private val contractRoute: String) {
     loggedBussesMap.size > 1
   }
 
+  def updateState2(): Unit = {
+    val scheduleDeviationChangeList: Array[Double] = new Array[Double](loggedBussesMap.size)
+    var counter = 0
+    for ((busId, observationList) <- loggedBussesMap) {
+      if (observationList.size() >= 2) {
+        scheduleDeviationChangeList(counter) = observationList.get(observationList.size() - 1).getScheduleDeviation - observationList.get(observationList.size() - 2).getScheduleDeviation
+        counter += 1
+      }
+    }
+    averageScheduleDeaviation = scheduleDeviationChangeList(0)
+    for (index <- 1 until scheduleDeviationChangeList.size) {
+      if (scheduleDeviationChangeList(index) > averageScheduleDeaviation) {
+        averageScheduleDeaviation = scheduleDeviationChangeList(index)
+      }
+    }
+  }
+
   def updateState(): Unit = {
     val scheduleDeviationChangeList: Array[Double] = new Array[Double](loggedBussesMap.size)
     var counter = 0
@@ -38,7 +55,7 @@ class Route(private val contractRoute: String) {
 
         for (index <- 1 until observationList.size()) {
           val observation = observationList.get(index)
-          val weight = Math.pow(3, index) / 1000
+          val weight = Math.pow(5, index) / 1000
           weightSum += weight
           sum += weight * (observation.getScheduleDeviation - prevObservation.getScheduleDeviation)
           prevObservation = observation

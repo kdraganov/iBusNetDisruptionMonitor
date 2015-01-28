@@ -4,9 +4,9 @@ import java.io.File
 
 import scala.collection.mutable
 import scala.io.Source
-
+import scala.concurrent.duration._
 /**
- * Created by Konstantin on 26/01/2015.
+ * Created by Konstantin
  */
 class Network {
 
@@ -20,12 +20,15 @@ class Network {
 
   def calculateDisruptions(): Unit = {
     println("BEGIN:Calculating disruptions...")
-        for ((routeNumber, route) <- routeMap) {
-          if (route.isRouteActive()) {
-            route.updateState()
-            println(route.getContractRoute + " - average schedule deviation change = " + route.getAverageDisruptionTime / 60 + " minutes")
-          }
+    for ((routeNumber, route) <- routeMap) {
+      if (route.isRouteActive()) {
+        route.updateState2()
+        if (route.getAverageDisruptionTime / 60 > 10) {
+          val disruptionTime = Duration(route.getAverageDisruptionTime, SECONDS)
+          println(route.getContractRoute + " - max schedule deviation change observed = " + disruptionTime.toMinutes + " minutes")
         }
+      }
+    }
     println("FINISH:Calculating disruptions")
   }
 
