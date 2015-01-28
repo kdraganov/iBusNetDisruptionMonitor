@@ -4,7 +4,9 @@ package lbsl
  * Created by Konstantin on 26/01/2015.
  */
 class BusStop(//private var code: String,
-              private var name: String, private var longitude: Double, private var latitude: Double) {
+              private var name: String,
+              private var longitude: Double,
+              private var latitude: Double) {
 
   //def getCode(): String = code
 
