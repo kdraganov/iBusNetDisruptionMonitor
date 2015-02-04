@@ -1,6 +1,7 @@
 package main
 
-import lbsl._
+import org.slf4j.LoggerFactory
+import utility.Configuration
 
 /**
  * Created by Konstantin on 20/01/2015.
@@ -8,11 +9,18 @@ import lbsl._
 object app {
 
   def main(args: Array[String]) {
-    val directoryToMonitor: String = "E:\\Workspace\\\\iBusMonitorTestDirectory"
-    val dataFormatString: String = "yyyy/mm/dd hh:mm:ss"
-    val busStopFile: String = "E:\\Workspace\\iBusMonitorTestDirectory\\bus-stops.csv"
-    val busRoutesFile: String = "E:\\Workspace\\iBusMonitorTestDirectory\\bus-sequences.csv"
-    val iBusMonitor = new iBusMonitor(directoryToMonitor, dataFormatString, busStopFile, busRoutesFile, ';', 2500)
+    val logger = LoggerFactory.getLogger("APP")
+    logger.info("TEST")
+    if (args(0) == null || args(0) == None || args(0).length <= 0) {
+      logger.error("Missing arguments: Unspecified configuration file.")
+    }
+
+    val configuration = Configuration
+    configuration.setConfigurationFilePath(args(0))
+    configuration.init()
+    //TODO: REMOVE
+    configuration.test()
+    val iBusMonitor = new iBusMonitor()
     iBusMonitor.start();
   }
 

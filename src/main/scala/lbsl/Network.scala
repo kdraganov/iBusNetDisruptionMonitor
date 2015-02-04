@@ -1,104 +1,85 @@
 package lbsl
 
-import java.io.File
+import org.slf4j.LoggerFactory
+import utility.Configuration
 
 import scala.collection.mutable
-import scala.io.Source
 import scala.concurrent.duration._
+import scala.io.Source
+
 /**
  * Created by Konstantin
  */
 class Network {
 
-  private final val busStopListFileDelimeter = "\\t"
-  private final val routesListFileDelimeter = ","
-
-  private var busStopListFile: File = null
-  private var routesListFile: File = null
+  private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
 
+  def addObservation(observation: Observation): Unit = {
+    val route = routeMap.getOrElse(observation.getContractRoute, null)
+    if (route != null) {
+      route.addObservation(observation)
+    } else {
+      logger.warn("Bus route [{}] from bus network.", observation.getContractRoute)
+    }
+  }
+
   def calculateDisruptions(): Unit = {
-    println("BEGIN:Calculating disruptions...")
+    logger.info("BEGIN:Calculating disruptions...")
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.updateState2()
         if (route.getAverageDisruptionTime / 60 > 10) {
           val disruptionTime = Duration(route.getAverageDisruptionTime, SECONDS)
-          println(route.getContractRoute + " - max schedule deviation change observed = " + disruptionTime.toMinutes + " minutes")
+          logger.trace(route.getContractRoute + " - max schedule deviation change observed = " + disruptionTime.toMinutes + " minutes")
         }
       }
     }
-    println("FINISH:Calculating disruptions")
+    logger.info("FINISH:Calculating disruptions")
   }
 
-  def init(busStopListFilePath: String, routesListFilePath: String): Unit = {
-    busStopListFile = new File(busStopListFilePath)
-    routesListFile = new File(routesListFilePath)
+  def init(): Unit = {
     //TODO: translate easting/northing to lat/long
-    println("BEGIN: Loading bus stops.")
+    logger.info("BEGIN: Loading bus stops.")
     loadBusStops()
-    println("FINISH: Loaded " + busStopMap.size + " bus stops.")
-    println("BEGIN: Loading bus routes.")
+    logger.info("FINISH: Loaded {} bus stops.", busStopMap.size)
+    logger.info("BEGIN: Loading bus routes.")
     loadRoutes()
-    println("FINISH: Loaded " + routeMap.size + " bus routes.")
-
-    //TEST
-    //    for ((key, route) <- routeMap) {
-    //      if(route == null){
-    //        println(key + " - NULL ROUTE")
-    //      }
-    //
-    //      var newKey = route.getContractRoute + "_"
-    //      if (route.getDirection == Route.inbound) {
-    //        newKey += Route.outbound
-    //      } else {
-    //        newKey += Route.inbound
-    //      }
-    //      if (routeMap.get(newKey) == None) {
-    //        println("Missing: " + newKey)
-    //      }
-    //    }
-    //    for ((key, stop) <- busStopMap) {
-    //      println(key + "|" + stop.getName() + "|" + stop.getLatitude() + "|" + stop.getLatitude())
-    //    }
-    //    val stop: BusStop = busStops.getOrElse("R0865", null)
-    //    println(stop.getCode() + "|" + stop.getName() + "|" + stop.getLatitude() + "|" + stop.getLatitude())
-
+    logger.info("FINISH: Loaded {} bus routes.", routeMap.size)
   }
 
   private def loadBusStops(): Unit = {
-    val source = Source.fromFile(busStopListFile.getAbsolutePath)
+    val source = Source.fromFile(Configuration.getBusStopFile().getAbsolutePath)
+    //TODO: check whether to drop headers
     for (line <- source.getLines().drop(1)) {
-      //drop header line
-      val tokens: Array[String] = line.split(busStopListFileDelimeter)
+      val tokens: Array[String] = line.split(Configuration.getBusStopFileDelimiter)
+      //TODO: This check should be more intelligent
       if (tokens.length >= 10) {
-        busStopMap.put(tokens(0), new BusStop(tokens(3), tokens(9).toDouble, tokens(10).toDouble))
+        busStopMap.put(tokens(BusStop.StopCodeLBSL), new BusStop(tokens(BusStop.StopName), tokens(BusStop.Latitude).toDouble, tokens(BusStop.Longitude).toDouble))
       }
     }
     source.close
   }
 
   private def loadRoutes(): Unit = {
-    val source = Source.fromFile(routesListFile.getAbsolutePath)
-    //    var routeKey: String = "1"
-    //    var route: Route = new Route("1")
+    val source = Source.fromFile(Configuration.getBusRouteFile.getAbsolutePath)
     var routeKey: String = null
     var route: Route = null
     for (line <- source.getLines().drop(1)) {
-      val tokens: Array[String] = line.split(routesListFileDelimeter)
+      val tokens: Array[String] = line.split(Configuration.getBusRouteFileDelimiter)
       if (tokens.length >= 11) {
         if (route == null) {
-          routeKey = tokens(0)
+          routeKey = tokens(Route.Route)
           route = new Route(routeKey)
         }
-        if (routeKey != tokens(0)) {
+        if (routeKey != tokens(Route.Route)) {
           routeMap.put(routeKey, route)
-          routeKey = tokens(0)
-          route = new Route(tokens(0))
+          routeKey = tokens(Route.Route)
+          route = new Route(routeKey)
         }
-        val direction = if (Integer.parseInt(tokens(1)) % 2 == 0) Route.inbound else Route.outbound
-        route.addBusStop(tokens(3), direction, Integer.parseInt(tokens(2)) - 1)
+        val direction = if (Integer.parseInt(tokens(1)) % 2 == 0) Route.Inbound else Route.Outbound
+        route.addBusStop(tokens(Route.StopCodeLBSL), direction, Integer.parseInt(tokens(Route.Sequence)) - 1)
       }
 
     }
@@ -110,14 +91,6 @@ class Network {
 
   //TODO: Need to throw exception probably
   def getRoute(number: String): Route = routeMap.getOrElse(number, null)
-
-  def setRouteListFilePath(path: String) {
-    routesListFile = new File(path)
-  }
-
-  def setBusStopListFilePath(path: String) {
-    busStopListFile = new File(path)
-  }
 
   // USING RUNS
   //  private def loadRoutes(): Unit = {

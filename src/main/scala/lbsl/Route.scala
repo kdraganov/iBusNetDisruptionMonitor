@@ -1,7 +1,8 @@
 package lbsl
 
-import java.text.SimpleDateFormat
 import java.util
+
+import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
 
@@ -12,12 +13,10 @@ import scala.collection.mutable
 
 class Route(private val contractRoute: String) {
 
-  val dateFormatter: SimpleDateFormat = new SimpleDateFormat("yyyy/mm/dd hh:mm:ss")
-
+  private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private var averageScheduleDeaviation: Double = 0
   private val outboundBusStopSequence: util.ArrayList[String] = new util.ArrayList[String]()
   private val inboundBusStopSequence: util.ArrayList[String] = new util.ArrayList[String]()
-  //  private var observationList: List = null //observation list for this route
 
   private val loggedBussesMap: mutable.HashMap[Integer, ObservationList[Observation]] = new mutable.HashMap[Integer, ObservationList[Observation]]()
 
@@ -123,6 +122,19 @@ class Route(private val contractRoute: String) {
 }
 
 object Route {
-  final val outbound = 1
-  final val inbound = 2
+
+  final val Outbound = 1
+  final val Inbound = 2
+
+  final val Route: Integer = 0
+  final val Run: Integer = 1
+  final val Sequence: Integer = 2
+  final val StopCodeLBSL: Integer = 3
+  final val BusStopCode: Integer = 4
+  final val NaptanAtco: Integer = 5
+  final val StopName: Integer = 6
+  final val LocationEasting: Integer = 7
+  final val LocationNorthing: Integer = 8
+  final val Heading: Integer = 9
+  final val VirtualBusStop: Integer = 10
 }
