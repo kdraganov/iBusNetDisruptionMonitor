@@ -3,6 +3,7 @@ package lbsl
 import java.util.{ArrayList, Collections}
 
 import org.slf4j.LoggerFactory
+import utility.{Configuration, Helper}
 
 import scala.collection.mutable.HashMap
 
@@ -14,23 +15,26 @@ import scala.collection.mutable.HashMap
 class Route(private val contractRoute: String) {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-  private var averageScheduleDeaviation: Double = 0
+  private var averageScheduleDeviation: Double = 0
   private val outboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
   private val inboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
 
-  private var inboundRouteSegments: Array[Integer] = null
-  private val outboundRouteSegments: Array[Integer] = null
+  private var inboundRouteSegments: Array[Integer] = Helper.getRouteSegments(inboundBusStopSequence.size(), Configuration.getRouteSegmentSize)
+  private var outboundRouteSegments: Array[Integer] = null
 
   private val busesOnRoute: HashMap[Integer, ArrayList[Observation]] = new HashMap[Integer, ArrayList[Observation]]()
 
   def generateRouteSegmentation(): Unit = {
-    //inboundRouteSegments = Helper.splitArrayIntoSegments(inboundBusStopSequence.size(),Configuration.getRouteSegmentSize).toArray()
+    inboundRouteSegments = Helper.getRouteSegments(inboundBusStopSequence.size(), Configuration.getRouteSegmentSize)
+    outboundRouteSegments = Helper.getRouteSegments(outboundBusStopSequence.size(), Configuration.getRouteSegmentSize)
   }
 
   /**
    * Sort observation and remove old elements and remove observation list from map if no observations
    */
+  //TODO: put the old date time as a settings parameter
   private def updateObservations(): Unit = {
+    val update = !busesOnRoute.isEmpty
     for ((busId, observationList) <- busesOnRoute) {
       Collections.sort(observationList)
       val latestFeed = observationList.get(observationList.size() - 1)
@@ -39,13 +43,18 @@ class Route(private val contractRoute: String) {
         diff = (latestFeed.getTimeOfData.getTime - observationList.remove(0).getTimeOfData.getTime) / 60 * 60 * 1000
       }
       if (observationList.isEmpty) {
+        logger.debug("Bus with id {} has not been active on route {} in the last hour.", busId, contractRoute)
         busesOnRoute.remove(busId)
       }
+    }
+    if(update){
+      logger.debug("Bus route {} has {} active buses.", contractRoute, busesOnRoute.size)
     }
   }
 
   def update(): Unit = {
-
+    //TODO: NEXT STEP CALCULATE BUS PERFORMANCE PER SEGMENT AND TAKE THE WEIGHT MOVING AVERAGE
+    logger.debug("Here route {} has to update its state.", contractRoute)
   }
 
   private def updateState2(): Unit = {
@@ -57,10 +66,10 @@ class Route(private val contractRoute: String) {
         counter += 1
       }
     }
-    averageScheduleDeaviation = scheduleDeviationChangeList(0)
+    averageScheduleDeviation = scheduleDeviationChangeList(0)
     for (index <- 1 until scheduleDeviationChangeList.size) {
-      if (scheduleDeviationChangeList(index) > averageScheduleDeaviation) {
-        averageScheduleDeaviation = scheduleDeviationChangeList(index)
+      if (scheduleDeviationChangeList(index) > averageScheduleDeviation) {
+        averageScheduleDeviation = scheduleDeviationChangeList(index)
       }
     }
   }
@@ -93,8 +102,7 @@ class Route(private val contractRoute: String) {
     for (value: Double <- scheduleDeviationChangeList) {
       sum += value
     }
-    averageScheduleDeaviation = sum / scheduleDeviationChangeList.length
-
+    averageScheduleDeviation = sum / scheduleDeviationChangeList.length
   }
 
   def addObservation(observation: Observation): Unit = {
@@ -147,7 +155,7 @@ class Route(private val contractRoute: String) {
 
   def getContractRoute = contractRoute
 
-  def getAverageDisruptionTime = averageScheduleDeaviation
+  def getAverageDisruptionTime = averageScheduleDeviation
 
 }
 

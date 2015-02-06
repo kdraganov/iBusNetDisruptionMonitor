@@ -1,6 +1,5 @@
 package utility
 
-import java.util
 import java.util.ArrayList
 
 /**
@@ -12,17 +11,17 @@ class Helper {
 
 object Helper {
 
-  def test(inputArraySize: Integer, segmentSize: Integer): Array[Integer] = {
-    val avg = inputArraySize / segmentSize
-    val list: util.ArrayList[Integer] = new util.ArrayList[Integer]()
-    var last = 0
-    while (last < inputArraySize){
-      list.add(last + avg)
-      last += avg
-    }
-
-    return list.toArray(new Array[Integer](list.size()))
-  }
+  //  def test(inputArraySize: Integer, segmentSize: Integer): Array[Integer] = {
+  //    val avg = inputArraySize / segmentSize
+  //    val list: util.ArrayList[Integer] = new util.ArrayList[Integer]()
+  //    var last = 0
+  //    while (last < inputArraySize){
+  //      list.add(last + avg)
+  //      last += avg
+  //    }
+  //
+  //    return list.toArray(new Array[Integer](list.size()))
+  //  }
 
   def getRouteSegments(inputArraySize: Integer, segmentSize: Integer): Array[Integer] = {
     val tempResult = splitArrayIntoSegments(inputArraySize, segmentSize)
@@ -32,7 +31,7 @@ object Helper {
 
   def splitArrayIntoSegments(inputArraySize: Integer, segmentSize: Integer, offset: Integer = 0): ArrayList[Integer] = {
     //val leftSize = if (inputArraySize % 2 == 1) inputArraySize / 2 else (inputArraySize - 1) / 2
-    val leftSize = Math.round(inputArraySize / 2 )
+    val leftSize = Math.round(inputArraySize / 2)
     val rightSize = inputArraySize - leftSize
 
     var left: ArrayList[Integer] = null

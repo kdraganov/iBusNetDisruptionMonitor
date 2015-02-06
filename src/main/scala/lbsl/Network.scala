@@ -22,10 +22,15 @@ class Network {
     if (route != null) {
       route.addObservation(observation)
     } else {
-      logger.warn("Bus route [{}] from bus network.", observation.getContractRoute)
+      logger.warn("Bus route [{}] missing from bus network.", observation.getContractRoute)
     }
   }
 
+  def updateStatus(): Unit = {
+    //TODO: Implement
+    calculateDisruptions()
+    //TODO:GENERATE FILE FROM THE DISRUPTIONS
+  }
 
   private def testGetAVGStats(): Unit = {
     var counter = 0
@@ -52,9 +57,6 @@ class Network {
     logger.debug("Shortest route {} consists of {} stops", minRoute, min)
   }
 
-  def updateStatus(): Unit = {
-    calculateDisruptions()
-  }
 
   private def calculateDisruptions(): Unit = {
     logger.info("BEGIN:Calculating disruptions...")
