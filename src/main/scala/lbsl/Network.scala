@@ -15,6 +15,7 @@ class Network {
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
+  //TODO: add list of disruptions
 
   def addObservation(observation: Observation): Unit = {
     val route = routeMap.getOrElse(observation.getContractRoute, null)
@@ -25,11 +26,41 @@ class Network {
     }
   }
 
-  def calculateDisruptions(): Unit = {
+
+  private def testGetAVGStats(): Unit = {
+    var counter = 0
+    var sum = 0
+    var max = 0
+    var maxRoute = "RV!"
+    var minRoute = "RV?"
+    var min = 100
+    for ((routeNumber, route) <- routeMap) {
+      val temp = route.getOutboundStopSequence().size()
+      if (temp > max) {
+        max = temp
+        maxRoute = routeNumber
+      }
+      if (temp < min) {
+        min = temp
+        minRoute = routeNumber
+      }
+      sum += temp
+      counter += 1
+    }
+    logger.debug("Average bus stops per route: {}", (sum / counter))
+    logger.debug("Longest route {} consists of {} stops", maxRoute, max)
+    logger.debug("Shortest route {} consists of {} stops", minRoute, min)
+  }
+
+  def updateStatus(): Unit = {
+    calculateDisruptions()
+  }
+
+  private def calculateDisruptions(): Unit = {
     logger.info("BEGIN:Calculating disruptions...")
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
-        route.updateState2()
+        route.update()
         if (route.getAverageDisruptionTime / 60 > 10) {
           val disruptionTime = Duration(route.getAverageDisruptionTime, SECONDS)
           logger.trace(route.getContractRoute + " - max schedule deviation change observed = " + disruptionTime.toMinutes + " minutes")

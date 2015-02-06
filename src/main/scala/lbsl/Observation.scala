@@ -7,17 +7,17 @@ import utility.Configuration
 /**
  * Created by Konstantin on 21/01/2015.
  */
-class Observation() {
+class Observation() extends Ordered[Observation] {
 
-  private var vehicleId: Integer = null
+  private var vehicleId: Integer = 0
   private var timeOfData: Date = null
-  private var tripType: Integer = null
+  private var tripType: Integer = 0
   private var contractRoute: String = null
   private var lastStopShortDesc: String = null
-  private var scheduleDeviation: Integer = null
-  private var longitude: Double = null
-  private var latitude: Double = null
-  private var eventId: Integer = null
+  private var scheduleDeviation: Integer = 0
+  private var longitude: Double = 0
+  private var latitude: Double = 0
+  private var eventId: Integer = 0
 
   def getVehicleId: Integer = vehicleId
 
@@ -43,7 +43,7 @@ class Observation() {
     scheduleDeviation = Integer.parseInt(tokens(Observation.ScheduleDeviation))
     tripType = Integer.parseInt(tokens(Observation.TripType))
 
-    //TODO: REVISE THIS CONDITION
+    //TODO: revise & improve this condition
     if (scheduleDeviation == -2147483645 || !lbsl.TripType.isActiveTrip(tripType)) {
       return false
     }
@@ -56,6 +56,8 @@ class Observation() {
     lastStopShortDesc = tokens(Observation.LastStopShortDesc)
     return true
   }
+
+  def compare(that: Observation) = this.getTimeOfData compareTo that.getTimeOfData
 }
 
 object Observation {

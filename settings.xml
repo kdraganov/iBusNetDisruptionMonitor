@@ -26,5 +26,5 @@
         <!--Interval at which new feeds are pushed (in seconds)-->
         <updateInterval>300</updateInterval>
     </feedFile>
-    <dateFormat>yyyy/mm/dd hh:mm:ss</dateFormat>
+    <dateFormat>yyyy/MM/dd hh:mm:ss</dateFormat>
 </configuration>

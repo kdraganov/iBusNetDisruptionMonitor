@@ -54,7 +54,7 @@ class iBusMonitor() extends Thread {
       }
       key.reset()
       if (update) {
-        busNetwork.calculateDisruptions()
+        busNetwork.updateStatus()
       }
       Thread.sleep(Configuration.getMonitorThreadSleepInterval())
     }

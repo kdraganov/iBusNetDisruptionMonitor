@@ -76,6 +76,10 @@ object Configuration {
 
   def getFeedUpdateInterval: Integer = feedUpdateInterval
 
+  def getRouteSegmentSize: Integer = {
+    return Math.round(feedUpdateInterval / 60)
+  }
+
   def test(): Unit = {
     logger.trace(getTitle())
     logger.trace(getMode())
