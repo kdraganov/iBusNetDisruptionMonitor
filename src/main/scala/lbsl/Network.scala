@@ -63,9 +63,14 @@ class Network {
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.update()
-        if (route.getAverageDisruptionTime / 60 > 10) {
-          val disruptionTime = Duration(route.getAverageDisruptionTime, SECONDS)
-          logger.trace(route.getContractRoute + " - max schedule deviation change observed = " + disruptionTime.toMinutes + " minutes")
+        if (route.getInboundDisruptionTime / 60 > 1) {
+          val disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS)
+          logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime.toMinutes + " minutes")
+        }
+
+        if (route.getOutboundDisruptionTime / 60 > 1) {
+          val disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS)
+          logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime.toMinutes + " minutes")
         }
       }
     }

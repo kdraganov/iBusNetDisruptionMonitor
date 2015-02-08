@@ -17,10 +17,17 @@ object app {
     val configuration = Configuration
     configuration.setConfigurationFilePath(args(0))
     configuration.init()
-    
+
+
+    val time1 = Configuration.getDateFormat().parse("2014/12/01 02:30:44")
+    val time2 = Configuration.getDateFormat().parse("2014/12/01 00:30:44")
+    val diff = (time2.getTime - time1.getTime) / (60 * 60 * 1000)
+
+    logger.debug("Time diff in minutes between " + time1.toString + " and " + time2.toString + " is " + diff.toString + ".")
+    System.exit(0)
     //TODO:REMOVE
-    logger.debug("Loaded below settings:")
-    configuration.test()
+    //    logger.debug("Loaded below settings:")
+    //    configuration.test()
 
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start();
