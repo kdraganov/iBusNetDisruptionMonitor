@@ -5,6 +5,7 @@ import java.util.{ArrayList, Collections, Date}
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable.HashMap
+import scala.concurrent.duration._
 
 /**
  * Created by Konstantin on 26/01/2015.
@@ -13,45 +14,34 @@ import scala.collection.mutable.HashMap
 
 class Route(private val contractRoute: String) {
 
+  //TODO:Move this to settings.xml
+  private final val DataValidityTimeInHours: Integer = 1
+
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-  //private var averageScheduleDeviation: Double = 0
   private var inboundScheduleDeviation: Double = 0
   private var outboundScheduleDeviation: Double = 0
   private val outboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
   private val inboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
-
   private var inboundSections: Array[ArrayList[Tuple2[Integer, Date]]] = null
   private var outboundSections: Array[ArrayList[Tuple2[Integer, Date]]] = null
-
-  //  private var inboundRouteSegments: Array[Integer] = Helper.getRouteSegments(inboundBusStopSequence.size(), Configuration.getRouteSegmentSize)
-  //  private var outboundRouteSegments: Array[Integer] = null
-
   private val busesOnRoute: HashMap[Integer, ArrayList[Observation]] = new HashMap[Integer, ArrayList[Observation]]()
-
-  //  def generateRouteSegmentation(): Unit = {
-  //    inboundRouteSegments = Helper.getRouteSegments(inboundBusStopSequence.size(), Configuration.getRouteSegmentSize)
-  //    outboundRouteSegments = Helper.getRouteSegments(outboundBusStopSequence.size(), Configuration.getRouteSegmentSize)
-  //  }
 
   /**
    * Sort observation and remove old elements and remove observation list from map if no observations
    */
-  //TODO: put the old date time as a settings parameter
   private def updateObservations(): Unit = {
     val update = !busesOnRoute.isEmpty
     for ((busId, observationList) <- busesOnRoute) {
       Collections.sort(observationList)
       val latestFeed = observationList.get(observationList.size() - 1)
-      var diff = (latestFeed.getTimeOfData.getTime - observationList.get(0).getTimeOfData.getTime) / (60 * 60 * 1000)
-      while (observationList.size() > 0 && diff > 1) {
-        diff = (latestFeed.getTimeOfData.getTime - observationList.remove(0).getTimeOfData.getTime) / (60 * 60 * 1000)
+      var timeDiff = latestFeed.getTimeOfData.getTime - observationList.get(0).getTimeOfData.getTime
+      while (observationList.size() > 0 && Duration(timeDiff, SECONDS).toMinutes > this.DataValidityTimeInHours) {
+        timeDiff = latestFeed.getTimeOfData.getTime - observationList.remove(0).getTimeOfData.getTime
       }
-
       if (observationList.isEmpty) {
-        // logger.debug("Bus with id {} has not been active on route {} in the last hour.", busId, contractRoute)
+        logger.debug("Bus with id {} has not been active on route {} in the last hour.", busId, contractRoute)
         busesOnRoute.remove(busId)
       }
-
     }
     if (update) {
       logger.debug("Bus route {} has {} active buses.", contractRoute, busesOnRoute.size)
@@ -67,7 +57,7 @@ class Route(private val contractRoute: String) {
       return new Triple[Integer, Integer, Integer](Route.Outbound, stopAIndex, stopBIndex)
     }
     stopAIndex = inboundBusStopSequence.indexOf(stopA)
-    stopBIndex = inboundBusStopSequence.indexOf(stopA)
+    stopBIndex = inboundBusStopSequence.indexOf(stopB)
     if (stopAIndex > -1 && stopBIndex > -1) {
       return new Triple[Integer, Integer, Integer](Route.Inbound, stopAIndex, stopBIndex)
     }
@@ -78,15 +68,15 @@ class Route(private val contractRoute: String) {
   private def addDifference(stopA: String, stopB: String, difference: Integer, date: Date): Unit = {
     val temp = getDirectionAndStopIndexes(stopA, stopB)
     // readings not from the same direction
-    if (temp != null) {
+    if (temp != null && (temp._3 - temp._2 - 1) > 0) {
       val diff = difference / (temp._3 - temp._2 - 1)
       if (temp._1 == Route.Inbound) {
-        for (i <- temp._2.intValue() + 1 until temp._3) {
+        for (i <- (temp._2.intValue() + 1) until temp._3) {
           logger.debug("Adding difference to inbound section {}", i)
           inboundSections(i).add((diff, date))
         }
       } else {
-        for (i <- temp._2.intValue() + 1 until temp._3) {
+        for (i <- (temp._2.intValue() + 1) until temp._3) {
           logger.debug("Adding difference to outbound section {}", i)
           outboundSections(i).add((diff, date))
         }
@@ -97,7 +87,13 @@ class Route(private val contractRoute: String) {
 
   def update(): Unit = {
     inboundSections = new Array[ArrayList[Tuple2[Integer, Date]]](inboundBusStopSequence.size() - 1)
+    for (i <- 0 until inboundSections.length) {
+      inboundSections(i) = new ArrayList[Tuple2[Integer, Date]]()
+    }
     outboundSections = new Array[ArrayList[Tuple2[Integer, Date]]](outboundBusStopSequence.size() - 1)
+    for (i <- 0 until outboundSections.length) {
+      outboundSections(i) = new ArrayList[Tuple2[Integer, Date]]()
+    }
     for ((busId, observationList) <- busesOnRoute) {
       if (observationList.size() > 0) {
         logger.debug("Route {} observation list size = {} ", getContractRoute, observationList.size())
@@ -108,7 +104,7 @@ class Route(private val contractRoute: String) {
           if (preSectionObservation.getLastStopShortDesc != postSectionObservation.getLastStopShortDesc) {
             val difference = postSectionObservation.getScheduleDeviation - preSectionObservation.getScheduleDeviation //schedule deviation difference in seconds
             logger.debug("Adding stopA = {} and stopB = {} with schedule deviation difference = {} and time of data {}",
-              (preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference, postSectionObservation.getTimeOfData.toString))
+              Array[Object](preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference.toString, postSectionObservation.getTimeOfData.toString))
 
             addDifference(preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference, postSectionObservation.getTimeOfData)
             preSectionObservation = postSectionObservation
@@ -135,10 +131,9 @@ class Route(private val contractRoute: String) {
           weight += (i + 1)
           weightSum += tempArray(i)._1 * (i + 1)
         }
-        inbound(x) = weightSum / weight
-        //logger.debug("inbound section {} = {} with weightSum = {} and weight = {}", (x.toString, inbound(x).toString, weightSum.toString, weight.toString))
-        if (inbound(x) < 0) {
-          inbound(x) = 0
+        inbound(x) = 0
+        if (weight > 0 && (weightSum / weight) > 0) {
+          inbound(x) = weightSum / weight
         }
         inboundScheduleDeviation += inbound(x)
       }
@@ -157,10 +152,9 @@ class Route(private val contractRoute: String) {
           weight += (i + 1)
           weightSum += tempArray(i)._1 * (i + 1)
         }
-        outbound(x) = weightSum / weight
-        //logger.debug("outbound section {} = {} with weightSum = {} and weight = {}", (x.toString, outbound(x).toString, weightSum.toString, weight.toString))
-        if (outbound(x) < 0) {
-          outbound(x) = 0
+        outbound(x) = 0
+        if (weight > 0 && (weightSum / weight) > 0) {
+          outbound(x) = weightSum / weight
         }
         outboundScheduleDeviation += outbound(x)
       }
@@ -203,12 +197,12 @@ class Route(private val contractRoute: String) {
   }
 
 
-  def getInboundStopSequence(): ArrayList[String] = {
-    return inboundBusStopSequence
+  def getInboundStopSequence(): Array[String] = {
+    return inboundBusStopSequence.toArray(new Array[String](inboundBusStopSequence.size()))
   }
 
-  def getOutboundStopSequence(): ArrayList[String] = {
-    return outboundBusStopSequence
+  def getOutboundStopSequence(): Array[String] = {
+    return outboundBusStopSequence.toArray(new Array[String](outboundBusStopSequence.size()))
   }
 
   def isRouteActive(): Boolean = {
@@ -217,8 +211,6 @@ class Route(private val contractRoute: String) {
   }
 
   def getContractRoute = contractRoute
-
-  //def getAverageDisruptionTime = averageScheduleDeviation
 
   def getOutboundDisruptionTime = outboundScheduleDeviation
 

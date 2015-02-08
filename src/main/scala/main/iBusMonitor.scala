@@ -1,6 +1,6 @@
 package main
 
-import java.io.File
+import java.io.{File, FileNotFoundException}
 import java.nio.file._
 
 import lbsl.{Network, Observation}
@@ -17,10 +17,10 @@ class iBusMonitor() extends Thread {
 
   private val busNetwork: Network = new Network
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
+  private var updateNetwork: Boolean = false;
 
   override
   def run() {
-    //initialize the bus network
     logger.trace("Starting {} initialisation.", Configuration.getTitle())
     logger.trace("****************************************************")
     busNetwork.init()
@@ -34,43 +34,66 @@ class iBusMonitor() extends Thread {
     while (true) {
       val key = watchService.take()
       val events = key.pollEvents()
-      var update: Boolean = false;
       for (event <- events) {
         val event_path = event.context().asInstanceOf[Path]
-        val fileName = event_path.toString()
-        if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-          logger.info("New file detected: {}", fileName)
-          if (fileName.startsWith(Configuration.getFeedFileStartWith) && fileName.endsWith(Configuration.getFeedFileEndWith)) {
-            val file: File = new File(Configuration.getFeedsDirectory().getAbsolutePath + "\\" + fileName)
-            if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
-              logger.info("Processing file [{}].", file.getAbsolutePath)
-              processFeed(file)
-              update = true
-            }
-          } else {
-            logger.info("File [{}] not for processing.", fileName)
+        if (event_path != null) {
+          val fileName = event_path.toString()
+          if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
+            logger.info("New file detected: {}", fileName)
+            processFile(new File(Configuration.getFeedsDirectory().getAbsolutePath + "\\" + fileName))
           }
         }
       }
       key.reset()
-      if (update) {
+      //check for any unprocessed files
+      for (file <- Configuration.getFeedsDirectory().listFiles()) {
+        if (file.isFile) {
+          processFile(file)
+        }
+      }
+
+      if (updateNetwork) {
         busNetwork.updateStatus()
       }
-      Thread.sleep(Configuration.getMonitorThreadSleepInterval())
+
+      try {
+        Thread.sleep(Configuration.getMonitorThreadSleepInterval())
+      } catch {
+        case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
+      }
+
     }
   }
 
-  def processFeed(file: File): Unit = {
+  private def processFile(file: File): Unit = {
+    if (file.getName.startsWith(Configuration.getFeedFileStartWith) && file.getName.endsWith(Configuration.getFeedFileEndWith)) {
+      if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
+        logger.info("Processing file [{}].", file.getAbsolutePath)
+        while (file.exists()) {
+          try {
+            processFeed(file)
+          } catch {
+            case e: FileNotFoundException => logger.error("Exception:", e)
+          }
+        }
+        updateNetwork = true
+      }
+    } else {
+      logger.trace("File [{}] not for processing.", file.getName)
+    }
+  }
+
+  @throws(classOf[FileNotFoundException])
+  private def processFeed(file: File): Unit = {
     val source = Source.fromFile(file.getAbsolutePath)
     //Check whether to drop header
-    for (line <- source.getLines().drop(1)) {
+    for (line <- source.getLines().drop(if (Configuration.getFeedFileHeader) 1 else 0)) {
       val observation = new Observation()
       if (observation.init(line)) {
         busNetwork.addObservation(observation)
       }
     }
     source.close
-
     val sourceFile = FileSystems.getDefault.getPath(file.getAbsolutePath)
     val destinationFile = FileSystems.getDefault.getPath(Configuration.getProcessedDirectory().getAbsolutePath, file.getName)
     Files.move(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)

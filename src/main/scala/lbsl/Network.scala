@@ -17,44 +17,10 @@ class Network {
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
   //TODO: add list of disruptions
 
-  def addObservation(observation: Observation): Unit = {
-    val route = routeMap.getOrElse(observation.getContractRoute, null)
-    if (route != null) {
-      route.addObservation(observation)
-    } else {
-      logger.warn("Bus route [{}] missing from bus network.", observation.getContractRoute)
-    }
-  }
 
   def updateStatus(): Unit = {
-    //TODO: Implement
     calculateDisruptions()
     //TODO:GENERATE FILE FROM THE DISRUPTIONS
-  }
-
-  private def testGetAVGStats(): Unit = {
-    var counter = 0
-    var sum = 0
-    var max = 0
-    var maxRoute = "RV!"
-    var minRoute = "RV?"
-    var min = 100
-    for ((routeNumber, route) <- routeMap) {
-      val temp = route.getOutboundStopSequence().size()
-      if (temp > max) {
-        max = temp
-        maxRoute = routeNumber
-      }
-      if (temp < min) {
-        min = temp
-        minRoute = routeNumber
-      }
-      sum += temp
-      counter += 1
-    }
-    logger.debug("Average bus stops per route: {}", (sum / counter))
-    logger.debug("Longest route {} consists of {} stops", maxRoute, max)
-    logger.debug("Shortest route {} consists of {} stops", minRoute, min)
   }
 
 
@@ -63,11 +29,10 @@ class Network {
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.update()
-        if (route.getInboundDisruptionTime / 60 > 1) {
+        if (route.getInboundDisruptionTime / 60 > 5) {
           val disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS)
           logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime.toMinutes + " minutes")
         }
-
         if (route.getOutboundDisruptionTime / 60 > 1) {
           val disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS)
           logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime.toMinutes + " minutes")
@@ -77,6 +42,26 @@ class Network {
     logger.info("FINISH:Calculating disruptions")
   }
 
+  /**
+   *
+   * @param observation bservation to be added to network
+   * @return true if bus route exists and observation has been added successfully,
+   *         otherwise false
+   */
+  def addObservation(observation: Observation): Boolean = {
+    val route = routeMap.getOrElse(observation.getContractRoute, null)
+    if (route != null) {
+      route.addObservation(observation)
+      return true
+    }
+    logger.warn("Bus route [{}] missing from bus network.", observation.getContractRoute)
+    return false
+  }
+
+  /**
+   * Initializes the bus network,
+   * it loads the bus stops and bus routes
+   */
   def init(): Unit = {
     //TODO: translate easting/northing to lat/long
     logger.info("BEGIN: Loading bus stops.")
@@ -124,10 +109,20 @@ class Network {
     source.close
   }
 
-  //TODO: Need to throw exception probably
+  /**
+   *
+   * @param code the bus stop LBSL code
+   * @return the bus stop if it exists,
+   *         otherwise null
+   */
   def getBusStop(code: String): BusStop = busStopMap.getOrElse(code, null)
 
-  //TODO: Need to throw exception probably
+  /**
+   *
+   * @param number the bus route number
+   * @return the bus route if exists,
+   *         otherwise null
+   */
   def getRoute(number: String): Route = routeMap.getOrElse(number, null)
 
   // USING RUNS
@@ -152,5 +147,30 @@ class Network {
   //
   //    }
   //    source.close
+  //  }
+
+  //  private def testGetAVGStats(): Unit = {
+  //    var counter = 0
+  //    var sum = 0
+  //    var max = 0
+  //    var maxRoute = "RV!"
+  //    var minRoute = "RV?"
+  //    var min = 100
+  //    for ((routeNumber, route) <- routeMap) {
+  //      val temp = route.getOutboundStopSequence().size()
+  //      if (temp > max) {
+  //        max = temp
+  //        maxRoute = routeNumber
+  //      }
+  //      if (temp < min) {
+  //        min = temp
+  //        minRoute = routeNumber
+  //      }
+  //      sum += temp
+  //      counter += 1
+  //    }
+  //    logger.debug("Average bus stops per route: {}", (sum / counter))
+  //    logger.debug("Longest route {} consists of {} stops", maxRoute, max)
+  //    logger.debug("Shortest route {} consists of {} stops", minRoute, min)
   //  }
 }
