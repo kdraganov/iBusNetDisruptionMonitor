@@ -46,17 +46,17 @@ class Route(private val contractRoute: String) {
     for ((busId, observationList) <- busesOnRoute) {
       Collections.sort(observationList)
       val latestFeed = observationList.get(observationList.size() - 1)
-      var timeDiff = latestFeed.getTimeOfData.getTime - observationList.get(0).getTimeOfData.getTime
+      var timeDiff = latestFeed.getTimeOfData.getTime - observationList.get(0).getTimeOfData.getTime // difference in MILLISECONDS
       while (Duration(timeDiff, MILLISECONDS).toHours > this.DataValidityTimeInHours && observationList.size() > 0) {
         timeDiff = latestFeed.getTimeOfData.getTime - observationList.remove(0).getTimeOfData.getTime
       }
       if (observationList.isEmpty) {
-        logger.debug("Bus with id {} has not been active on route {} in the last hour.", busId, contractRoute)
+        //logger.debug("Bus with id {} has not been active on route {} in the last hour.", busId, contractRoute)
         busesOnRoute.remove(busId)
       }
     }
     if (update) {
-      logger.debug("Bus route {} has {} active buses.", contractRoute, busesOnRoute.size)
+      // logger.debug("Bus route {} has {} active buses.", contractRoute, busesOnRoute.size)
     }
   }
 
@@ -80,7 +80,7 @@ class Route(private val contractRoute: String) {
     //    if (stopAIndex > -1 && stopBIndex > -1) {
     //      return new Triple[Integer, Integer, Integer](Route.Inbound, stopAIndex, stopBIndex)
     //    }
-    logger.debug("Bus stop with LBSL id {} cannot be found for route {}.", stopA, getContractRoute)
+    logger.debug("Bus stop with LBSL id {} or {} cannot be found for route {}.", Array[Object](stopA, stopB, getContractRoute))
     return null
   }
 
@@ -90,7 +90,7 @@ class Route(private val contractRoute: String) {
     if (temp != null && (temp._3 - temp._2 - 1) > 0) {
       val diff = difference / (temp._3 - temp._2 - 1)
       for (i <- (temp._2.intValue() + 1) until temp._3) {
-        logger.debug("Adding difference to inbound section {}", i)
+        //logger.debug("Adding difference to inbound section {}", i)
         sections(temp._1)(i).add((diff, date))
       }
 
@@ -131,15 +131,15 @@ class Route(private val contractRoute: String) {
     generateSections()
     for ((busId, observationList) <- busesOnRoute) {
       if (observationList.size() > 0) {
-        logger.debug("Route {} observation list size = {} ", getContractRoute, observationList.size())
+        // logger.debug("Route {} observation list size = {} ", getContractRoute, observationList.size())
         //we need at least two observations
         var preSectionObservation = observationList.get(0)
         for (i <- 1 until observationList.size()) {
           val postSectionObservation = observationList.get(i)
           if (preSectionObservation.getLastStopShortDesc != postSectionObservation.getLastStopShortDesc) {
             val difference = postSectionObservation.getScheduleDeviation - preSectionObservation.getScheduleDeviation //schedule deviation difference in seconds
-            logger.debug("Adding stopA = {} and stopB = {} with schedule deviation difference = {} and time of data {}",
-              Array[Object](preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference.toString, postSectionObservation.getTimeOfData.toString))
+            //logger.debug("Adding stopA = {} and stopB = {} with schedule deviation difference = {} and time of data {}",
+            //   Array[Object](preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference.toString, postSectionObservation.getTimeOfData.toString))
 
             addDifference(preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference, postSectionObservation.getTimeOfData)
             preSectionObservation = postSectionObservation

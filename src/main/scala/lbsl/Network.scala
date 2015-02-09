@@ -29,13 +29,13 @@ class Network {
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.update()
-        var disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS).toMinutes
-        if (disruptionTime > 1) {
-          logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime + " minutes")
+        var disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS).toSeconds
+        if (disruptionTime > 60) {
+          logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime + " seconds")
         }
         disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS).toMinutes
         if (disruptionTime > 1) {
-          logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime + " minutes")
+          logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime + " seconds")
         }
       }
     }
