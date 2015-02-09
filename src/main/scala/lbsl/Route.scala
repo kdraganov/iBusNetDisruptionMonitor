@@ -1,5 +1,6 @@
 package lbsl
 
+import java.util
 import java.util.{ArrayList, Collections, Date}
 
 import org.slf4j.LoggerFactory
@@ -18,12 +19,23 @@ class Route(private val contractRoute: String) {
   private final val DataValidityTimeInHours: Integer = 1
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-  private var inboundScheduleDeviation: Double = 0
-  private var outboundScheduleDeviation: Double = 0
-  private val outboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
-  private val inboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
-  private var inboundSections: Array[ArrayList[Tuple2[Integer, Date]]] = null
-  private var outboundSections: Array[ArrayList[Tuple2[Integer, Date]]] = null
+  //  private var inboundScheduleDeviation: Double = 0
+  //  private var outboundScheduleDeviation: Double = 0
+
+  private var sectionWMADelays: Array[Array[Integer]] = null
+
+  private val busStopSequence: Array[ArrayList[String]] = Array(new util.ArrayList[String](), new util.ArrayList[String]())
+
+  //  private val outboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
+  //  private val inboundBusStopSequence: ArrayList[String] = new ArrayList[String]()
+
+  private val sections: Array[Array[ArrayList[Tuple2[Integer, Date]]]] = new Array[Array[ArrayList[Tuple2[Integer, Date]]]](2)
+  //Array(Array(new util.ArrayList[(Integer, Date)]()),Array(new util.ArrayList[(Integer, Date)]()))
+  //
+
+  //  private var inboundSections: Array[ArrayList[Tuple2[Integer, Date]]] = null
+  //  private var outboundSections: Array[ArrayList[Tuple2[Integer, Date]]] = null
+
   private val busesOnRoute: HashMap[Integer, ArrayList[Observation]] = new HashMap[Integer, ArrayList[Observation]]()
 
   /**
@@ -35,7 +47,7 @@ class Route(private val contractRoute: String) {
       Collections.sort(observationList)
       val latestFeed = observationList.get(observationList.size() - 1)
       var timeDiff = latestFeed.getTimeOfData.getTime - observationList.get(0).getTimeOfData.getTime
-      while (observationList.size() > 0 && Duration(timeDiff, SECONDS).toMinutes > this.DataValidityTimeInHours) {
+      while (Duration(timeDiff, MILLISECONDS).toHours > this.DataValidityTimeInHours && observationList.size() > 0) {
         timeDiff = latestFeed.getTimeOfData.getTime - observationList.remove(0).getTimeOfData.getTime
       }
       if (observationList.isEmpty) {
@@ -51,16 +63,23 @@ class Route(private val contractRoute: String) {
   private def getDirectionAndStopIndexes(stopA: String, stopB: String): Tuple3[Integer, Integer, Integer] = {
     //TODO: need to add code to handle the scenario of when the stops are from two different directions
     // need to get start and end of section and distribute the difference
-    var stopAIndex = outboundBusStopSequence.indexOf(stopA)
-    var stopBIndex = outboundBusStopSequence.indexOf(stopB)
-    if (stopBIndex > stopAIndex && stopAIndex > -1) {
-      return new Triple[Integer, Integer, Integer](Route.Outbound, stopAIndex, stopBIndex)
+    for (i <- 0 until busStopSequence.length) {
+      val stopAIndex = busStopSequence(i).indexOf(stopA)
+      val stopBIndex = busStopSequence(i).indexOf(stopB)
+      if (stopBIndex > stopAIndex && stopAIndex > -1) {
+        return new Triple[Integer, Integer, Integer](i, stopAIndex, stopBIndex)
+      }
     }
-    stopAIndex = inboundBusStopSequence.indexOf(stopA)
-    stopBIndex = inboundBusStopSequence.indexOf(stopB)
-    if (stopAIndex > -1 && stopBIndex > -1) {
-      return new Triple[Integer, Integer, Integer](Route.Inbound, stopAIndex, stopBIndex)
-    }
+    //    var stopAIndex = outboundBusStopSequence.indexOf(stopA)
+    //    var stopBIndex = outboundBusStopSequence.indexOf(stopB)
+    //    if (stopBIndex > stopAIndex && stopAIndex > -1) {
+    //      return new Triple[Integer, Integer, Integer](Route.Outbound, stopAIndex, stopBIndex)
+    //    }
+    //    stopAIndex = inboundBusStopSequence.indexOf(stopA)
+    //    stopBIndex = inboundBusStopSequence.indexOf(stopB)
+    //    if (stopAIndex > -1 && stopBIndex > -1) {
+    //      return new Triple[Integer, Integer, Integer](Route.Inbound, stopAIndex, stopBIndex)
+    //    }
     logger.debug("Bus stop with LBSL id {} cannot be found for route {}.", stopA, getContractRoute)
     return null
   }
@@ -70,30 +89,46 @@ class Route(private val contractRoute: String) {
     // readings not from the same direction
     if (temp != null && (temp._3 - temp._2 - 1) > 0) {
       val diff = difference / (temp._3 - temp._2 - 1)
-      if (temp._1 == Route.Inbound) {
-        for (i <- (temp._2.intValue() + 1) until temp._3) {
-          logger.debug("Adding difference to inbound section {}", i)
-          inboundSections(i).add((diff, date))
-        }
-      } else {
-        for (i <- (temp._2.intValue() + 1) until temp._3) {
-          logger.debug("Adding difference to outbound section {}", i)
-          outboundSections(i).add((diff, date))
-        }
+      for (i <- (temp._2.intValue() + 1) until temp._3) {
+        logger.debug("Adding difference to inbound section {}", i)
+        sections(temp._1)(i).add((diff, date))
       }
+
+      //      if (temp._1 == Route.Inbound) {
+      //        for (i <- (temp._2.intValue() + 1) until temp._3) {
+      //          logger.debug("Adding difference to inbound section {}", i)
+      //          inboundSections(i).add((diff, date))
+      //        }
+      //      } else {
+      //        for (i <- (temp._2.intValue() + 1) until temp._3) {
+      //          logger.debug("Adding difference to outbound section {}", i)
+      //          outboundSections(i).add((diff, date))
+      //        }
+      //      }
+
     }
 
   }
 
+  def generateSections(): Unit = {
+    for (i <- 0 until sections.length) {
+      sections(i) = new Array[ArrayList[Tuple2[Integer, Date]]](busStopSequence(i).size() - 1)
+      for (x <- 0 until busStopSequence(i).size() - 1) {
+        sections(i)(x) = new ArrayList[Tuple2[Integer, Date]]()
+      }
+    }
+    //    inboundSections = new Array[ArrayList[Tuple2[Integer, Date]]](inboundBusStopSequence.size() - 1)
+    //    for (i <- 0 until inboundSections.length) {
+    //      inboundSections(i) = new ArrayList[Tuple2[Integer, Date]]()
+    //    }
+    //    outboundSections = new Array[ArrayList[Tuple2[Integer, Date]]](outboundBusStopSequence.size() - 1)
+    //    for (i <- 0 until outboundSections.length) {
+    //      outboundSections(i) = new ArrayList[Tuple2[Integer, Date]]()
+    //    }
+  }
+
   def update(): Unit = {
-    inboundSections = new Array[ArrayList[Tuple2[Integer, Date]]](inboundBusStopSequence.size() - 1)
-    for (i <- 0 until inboundSections.length) {
-      inboundSections(i) = new ArrayList[Tuple2[Integer, Date]]()
-    }
-    outboundSections = new Array[ArrayList[Tuple2[Integer, Date]]](outboundBusStopSequence.size() - 1)
-    for (i <- 0 until outboundSections.length) {
-      outboundSections(i) = new ArrayList[Tuple2[Integer, Date]]()
-    }
+    generateSections()
     for ((busId, observationList) <- busesOnRoute) {
       if (observationList.size() > 0) {
         logger.debug("Route {} observation list size = {} ", getContractRoute, observationList.size())
@@ -112,53 +147,53 @@ class Route(private val contractRoute: String) {
         }
       }
     }
-    customCal()
+    calculateSectionDelay()
   }
 
-  def customCal(): Unit = {
-    val inbound = new Array[Integer](inboundSections.size)
-    val outbound = new Array[Integer](outboundSections.size)
-    outboundScheduleDeviation = 0
-    inboundScheduleDeviation = 0
-    for (x <- 0 until inboundSections.length) {
-      val segment = inboundSections(x)
-      if (segment != null) {
-        val tempArray = new Array[Tuple2[Integer, Date]](segment.size())
-        segment.toArray(tempArray).sortBy(_._2)
-        var weightSum = 0
-        var weight = 0
-        for (i <- 0 until tempArray.length) {
-          weight += (i + 1)
-          weightSum += tempArray(i)._1 * (i + 1)
+  def calculateSectionDelay(): Unit = {
+    sectionWMADelays = Array(new Array[Integer](sections(getOutboundIndex).size), new Array[Integer](sections(getInboundIndex).size))
+    for (index <- 0 until sectionWMADelays.length) {
+      //for each direction
+      for (segmentIndex <- 0 until sections(index).length) {
+        val segment = sections(index)(segmentIndex)
+        if (segment != null) {
+          // need to sort it by time
+          val tempArray = segment.toArray(new Array[Tuple2[Integer, Date]](segment.size())).sortBy(_._2)
+          var weightSum = 0
+          var weight = 0
+          for (i <- 0 until tempArray.length) {
+            weight += (i + 1)
+            weightSum += tempArray(i)._1 * (i + 1)
+          }
+          sectionWMADelays(index)(segmentIndex) = 0
+          if (weight > 0 && (weightSum / weight) > 0) {
+            sectionWMADelays(index)(segmentIndex) = weightSum / weight
+          }
         }
-        inbound(x) = 0
-        if (weight > 0 && (weightSum / weight) > 0) {
-          inbound(x) = weightSum / weight
-        }
-        inboundScheduleDeviation += inbound(x)
       }
     }
+
 
     //logger.debug("Route {} inbound deviation = {} ", getContractRoute, inboundScheduleDeviation)
 
-    for (x <- 0 until outboundSections.length) {
-      val segment = outboundSections(x)
-      if (segment != null) {
-        val tempArray = new Array[Tuple2[Integer, Date]](segment.size())
-        segment.toArray(tempArray).sortBy(_._2)
-        var weightSum = 0
-        var weight = 0
-        for (i <- 0 until tempArray.length) {
-          weight += (i + 1)
-          weightSum += tempArray(i)._1 * (i + 1)
-        }
-        outbound(x) = 0
-        if (weight > 0 && (weightSum / weight) > 0) {
-          outbound(x) = weightSum / weight
-        }
-        outboundScheduleDeviation += outbound(x)
-      }
-    }
+    //    for (x <- 0 until outboundSections.length) {
+    //      val segment = outboundSections(x)
+    //      if (segment != null) {
+    //        val tempArray = new Array[Tuple2[Integer, Date]](segment.size())
+    //        segment.toArray(tempArray).sortBy(_._2)
+    //        var weightSum = 0
+    //        var weight = 0
+    //        for (i <- 0 until tempArray.length) {
+    //          weight += (i + 1)
+    //          weightSum += tempArray(i)._1 * (i + 1)
+    //        }
+    //        outbound(x) = 0
+    //        if (weight > 0 && (weightSum / weight) > 0) {
+    //          outbound(x) = weightSum / weight
+    //        }
+    //        outboundScheduleDeviation += outbound(x)
+    //      }
+    //    }
     //logger.debug("Route {} outbound deviation = {} ", getContractRoute, outboundScheduleDeviation)
   }
 
@@ -169,40 +204,51 @@ class Route(private val contractRoute: String) {
   }
 
   def addBusStop(busStopCode: String, direction: Integer): Unit = {
-    if (direction == Route.Inbound) {
-      inboundBusStopSequence.add(busStopCode)
-    } else {
-      outboundBusStopSequence.add(busStopCode)
-    }
+    busStopSequence(direction - 1).add(busStopCode)
+    //
+    //    if (direction == Route.Inbound) {
+    //      inboundBusStopSequence.add(busStopCode)
+    //    } else {
+    //      outboundBusStopSequence.add(busStopCode)
+    //    }
   }
 
   def addBusStop(busStopCode: String, direction: Integer, index: Integer): Unit = {
-    if (direction == Route.Inbound) {
-      if (index > inboundBusStopSequence.size()) {
-        inboundBusStopSequence.add(inboundBusStopSequence.size(), busStopCode)
-      } else if (index < 0) {
-        inboundBusStopSequence.add(0, busStopCode)
-      } else {
-        inboundBusStopSequence.add(index, busStopCode)
-      }
+
+    if (index > busStopSequence(direction - 1).size()) {
+      busStopSequence(direction - 1).add(busStopSequence(direction - 1).size(), busStopCode)
+    } else if (index < 0) {
+      busStopSequence(direction - 1).add(0, busStopCode)
     } else {
-      if (index > outboundBusStopSequence.size()) {
-        outboundBusStopSequence.add(outboundBusStopSequence.size(), busStopCode)
-      } else if (index < 0) {
-        outboundBusStopSequence.add(0, busStopCode)
-      } else {
-        outboundBusStopSequence.add(index, busStopCode)
-      }
+      busStopSequence(direction - 1).add(index, busStopCode)
     }
+
+    //    if (direction == Route.Inbound) {
+    //      if (index > inboundBusStopSequence.size()) {
+    //        inboundBusStopSequence.add(inboundBusStopSequence.size(), busStopCode)
+    //      } else if (index < 0) {
+    //        inboundBusStopSequence.add(0, busStopCode)
+    //      } else {
+    //        inboundBusStopSequence.add(index, busStopCode)
+    //      }
+    //    } else {
+    //      if (index > outboundBusStopSequence.size()) {
+    //        outboundBusStopSequence.add(outboundBusStopSequence.size(), busStopCode)
+    //      } else if (index < 0) {
+    //        outboundBusStopSequence.add(0, busStopCode)
+    //      } else {
+    //        outboundBusStopSequence.add(index, busStopCode)
+    //      }
+    //    }
+
   }
 
-
   def getInboundStopSequence(): Array[String] = {
-    return inboundBusStopSequence.toArray(new Array[String](inboundBusStopSequence.size()))
+    return busStopSequence(getInboundIndex).toArray(new Array[String](busStopSequence(getInboundIndex).size()))
   }
 
   def getOutboundStopSequence(): Array[String] = {
-    return outboundBusStopSequence.toArray(new Array[String](outboundBusStopSequence.size()))
+    return busStopSequence(getOutboundIndex).toArray(new Array[String](busStopSequence(getOutboundIndex).size()))
   }
 
   def isRouteActive(): Boolean = {
@@ -212,9 +258,25 @@ class Route(private val contractRoute: String) {
 
   def getContractRoute = contractRoute
 
-  def getOutboundDisruptionTime = outboundScheduleDeviation
+  def getOutboundDisruptionTime(): Double = {
+    getDisruptionTime(getOutboundIndex)
+  }
 
-  def getInboundDisruptionTime = inboundScheduleDeviation
+  def getInboundDisruptionTime(): Double = {
+    getDisruptionTime(getInboundIndex)
+  }
+
+  def getDisruptionTime(direction: Integer): Double = {
+    var sum = 0
+    for (section: Integer <- sectionWMADelays(direction)) {
+      sum += section
+    }
+    return sum
+  }
+
+  private def getInboundIndex = Route.Inbound - 1
+
+  private def getOutboundIndex = Route.Outbound - 1
 }
 
 object Route {

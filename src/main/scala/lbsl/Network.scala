@@ -29,13 +29,13 @@ class Network {
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.update()
-        if (route.getInboundDisruptionTime / 60 > 5) {
-          val disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS)
-          logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime.toMinutes + " minutes")
+        var disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS).toMinutes
+        if (disruptionTime > 1) {
+          logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime + " minutes")
         }
-        if (route.getOutboundDisruptionTime / 60 > 1) {
-          val disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS)
-          logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime.toMinutes + " minutes")
+        disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS).toMinutes
+        if (disruptionTime > 1) {
+          logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime + " minutes")
         }
       }
     }
