@@ -35,6 +35,7 @@ class Network {
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.update()
+        //TODO: Capture below in a method and loop for both inbound and outbound directions
         var disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS).toSeconds
         if (disruptionTime > 60) {
           logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime + " seconds")
@@ -42,7 +43,7 @@ class Network {
           for (i <- 0 until list.size()) {
             val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
             val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
-            stringToWrite += (route.getContractRoute + ";" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
+            stringToWrite += (route.getContractRoute + ";Inbound;" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
             logger.trace(route.getContractRoute + " - inbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
           }
         }
@@ -54,7 +55,7 @@ class Network {
           for (i <- 0 until list.size()) {
             val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
             val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
-            stringToWrite += (route.getContractRoute + ";" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
+            stringToWrite += (route.getContractRoute + ";Outbound;" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
             logger.trace(route.getContractRoute + " - outbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
           }
         }
@@ -64,7 +65,7 @@ class Network {
 
     if (stringToWrite.length > 0) {
       val fileWriter = new PrintWriter(new File("E:\\Workspace\\iBusMonitorTestDirectory\\Output\\Disruptions_" + dateFormat.format(Calendar.getInstance().getTime()) + ".csv"))
-      fileWriter.write("Route;SectionStart;SectionEnd;DisruptionObserved\n" + stringToWrite)
+      fileWriter.write("Route;Direction;SectionStart;SectionEnd;DisruptionObserved\n" + stringToWrite)
       fileWriter.close()
     }
 

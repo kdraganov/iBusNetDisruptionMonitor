@@ -1,15 +1,16 @@
 package main
 
 import org.slf4j.LoggerFactory
-import utility.Configuration
+import utility.{Configuration, SystemMonitor}
 
 /**
  * Created by Konstantin on 20/01/2015.
  */
 object app {
 
+  private val logger = LoggerFactory.getLogger("APP")
+
   def main(args: Array[String]) {
-    val logger = LoggerFactory.getLogger("APP")
     if (args(0) == null || args(0) == None || args(0).length <= 0) {
       logger.error("Missing arguments: Unspecified configuration file.")
     }
@@ -23,5 +24,9 @@ object app {
 
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start()
+    val systemMonitor = new SystemMonitor()
+    systemMonitor.start()
   }
+
+
 }
