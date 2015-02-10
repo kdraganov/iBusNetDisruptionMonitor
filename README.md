@@ -1,4 +1,4 @@
-iBusMonitor
+iBusNet Disruption Monitor
 ===========
 
 Author: Konstantin Draganov

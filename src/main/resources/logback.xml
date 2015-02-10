@@ -10,10 +10,10 @@
     </appender>
 
     <appender name="ROLLING" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>logs\iBusNetMonitor.log</file>
+        <file>logs\iBusNetDisruptionMonitor.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- daily rollover -->
-            <fileNamePattern>logs\history\iBusNetMonitor.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <fileNamePattern>logs\history\iBusNetDisruptionMonitor.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
             <!-- keep 30 days' worth of history-->
             <maxHistory>30</maxHistory>
             <timeBasedFileNamingAndTriggeringPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">

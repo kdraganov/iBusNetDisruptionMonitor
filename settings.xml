@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <title>iBusNetMonitor</title>
+    <title>iBusNetDisruptionMonitor</title>
     <mode>Dev</mode>
     <!--Dev;Test;Prod-->
     <feedsDir>E:\Workspace\iBusMonitorTestDirectory</feedsDir>
