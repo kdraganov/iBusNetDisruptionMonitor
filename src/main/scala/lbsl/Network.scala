@@ -1,5 +1,9 @@
 package lbsl
 
+import java.io.{File, PrintWriter}
+import java.text.SimpleDateFormat
+import java.util.Calendar
+
 import org.slf4j.LoggerFactory
 import utility.Configuration
 
@@ -17,6 +21,7 @@ class Network {
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
   //TODO: add list of disruptions
 
+  private val dateFormat = new SimpleDateFormat("yyyyMMdd_hhmmss")
 
   def updateStatus(): Unit = {
     calculateDisruptions()
@@ -26,19 +31,43 @@ class Network {
 
   private def calculateDisruptions(): Unit = {
     logger.info("BEGIN:Calculating disruptions...")
+    var stringToWrite = ""
     for ((routeNumber, route) <- routeMap) {
       if (route.isRouteActive()) {
         route.update()
         var disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS).toSeconds
         if (disruptionTime > 60) {
           logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime + " seconds")
+          val list = route.getInboundDisruptedSections()
+          for (i <- 0 until list.size()) {
+            val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
+            val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
+            stringToWrite += (route.getContractRoute + ";" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
+            logger.trace(route.getContractRoute + " - inbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
+          }
         }
-        disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS).toMinutes
-        if (disruptionTime > 1) {
+
+        disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS).toSeconds
+        if (disruptionTime > 60) {
           logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime + " seconds")
+          val list = route.getOutboundDisruptedSections()
+          for (i <- 0 until list.size()) {
+            val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
+            val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
+            stringToWrite += (route.getContractRoute + ";" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
+            logger.trace(route.getContractRoute + " - outbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
+          }
         }
+
       }
     }
+
+    if (stringToWrite.length > 0) {
+      val fileWriter = new PrintWriter(new File("E:\\Workspace\\iBusMonitorTestDirectory\\Output\\Disruptions_" + dateFormat.format(Calendar.getInstance().getTime()) + ".csv"))
+      fileWriter.write("Route;SectionStart;SectionEnd;DisruptionObserved\n" + stringToWrite)
+      fileWriter.close()
+    }
+
     logger.info("FINISH:Calculating disruptions")
   }
 

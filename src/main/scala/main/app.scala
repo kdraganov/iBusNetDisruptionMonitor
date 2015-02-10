@@ -1,8 +1,5 @@
 package main
 
-import java.util
-import java.util.Date
-
 import org.slf4j.LoggerFactory
 import utility.Configuration
 
@@ -25,6 +22,6 @@ object app {
     //    configuration.test()
 
     val iBusMonitor = new iBusMonitor()
-    iBusMonitor.start();
+    iBusMonitor.start()
   }
 }

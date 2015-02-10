@@ -54,6 +54,7 @@ class iBusMonitor() extends Thread {
 
       if (updateNetwork) {
         busNetwork.updateStatus()
+        updateNetwork = false
       }
 
       try {

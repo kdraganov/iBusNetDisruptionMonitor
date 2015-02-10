@@ -266,12 +266,50 @@ class Route(private val contractRoute: String) {
     getDisruptionTime(getInboundIndex)
   }
 
+  def getInboundDisruptedSections(): ArrayList[Tuple3[String, String, Integer]] = {
+    getDisruptedSections(getInboundIndex)
+  }
+
+  def getOutboundDisruptedSections(): ArrayList[Tuple3[String, String, Integer]] = {
+    getDisruptedSections(getOutboundIndex)
+  }
+
   def getDisruptionTime(direction: Integer): Double = {
     var sum = 0
     for (section: Integer <- sectionWMADelays(direction)) {
       sum += section
     }
     return sum
+  }
+
+  def getDisruptedSections(direction: Integer): ArrayList[Tuple3[String, String, Integer]] = {
+    val disruptedSections = new ArrayList[Tuple3[String, String, Integer]]()
+    var stopA: String = null
+    var stopB: String = null
+    var disruption: Integer = 0
+    for (i <- 0 until sectionWMADelays(direction).length) {
+      if (sectionWMADelays(direction)(i) > 0) {
+        //continue or start of disrupted section
+        if (stopA == null) {
+          stopA = busStopSequence(direction).get(i)
+        }
+        disruption += sectionWMADelays(direction)(i)
+      } else if (stopA != null) {
+        // end of sectionDisruption
+        stopB = busStopSequence(direction).get(i)
+        disruptedSections.add((stopA, stopB, disruption))
+        stopA = null
+        disruption = 0
+      }
+    }
+    return disruptedSections
+  }
+
+  private def getIndex(direction: Integer): Integer = {
+    if (direction == Route.Inbound) {
+      return getInboundIndex
+    }
+    return getOutboundIndex
   }
 
   private def getInboundIndex = Route.Inbound - 1
