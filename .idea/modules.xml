@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/ibusmonitor.iml" filepath="$PROJECT_DIR$/.idea/modules/ibusmonitor.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/iBusNetDisruptionMonitor.iml" filepath="$PROJECT_DIR$/.idea/modules/iBusNetDisruptionMonitor.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/ibusmonitor-build.iml" filepath="$PROJECT_DIR$/.idea/modules/ibusmonitor-build.iml" />
     </modules>
   </component>
