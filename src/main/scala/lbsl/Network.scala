@@ -19,6 +19,9 @@ class Network {
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
+
+  private val outputFilename: String = "E:\\Workspace\\disruptions\\DisruptionReport.csv"
+  private var prevTime: String = null
   //TODO: add list of disruptions
 
   private val dateFormat = new SimpleDateFormat("yyyyMMdd_hhmmss")
@@ -37,26 +40,30 @@ class Network {
         route.update()
         //TODO: Capture below in a method and loop for both inbound and outbound directions
         var disruptionTime = Duration(route.getInboundDisruptionTime, SECONDS).toSeconds
-        if (disruptionTime > 60) {
+        if (disruptionTime > 600) {
           logger.trace(route.getContractRoute + " - inbound disruption observed = " + disruptionTime + " seconds")
           val list = route.getInboundDisruptedSections()
           for (i <- 0 until list.size()) {
-            val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
-            val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
-            stringToWrite += (route.getContractRoute + ";Inbound;" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
-            logger.trace(route.getContractRoute + " - inbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
+            if (list.get(i)._3 / 60 > 1) {
+              val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
+              val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
+              stringToWrite += (route.getContractRoute + ";Inbound;" + stopA + ";" + stopB + ";" + (list.get(i)._3 / 60).toInt + ";0;2015/02/12 09:30:55\n")
+              logger.trace(route.getContractRoute + " - inbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
+            }
           }
         }
 
         disruptionTime = Duration(route.getOutboundDisruptionTime, SECONDS).toSeconds
-        if (disruptionTime > 60) {
+        if (disruptionTime > 600) {
           logger.trace(route.getContractRoute + " - outbound disruption observed  = " + disruptionTime + " seconds")
           val list = route.getOutboundDisruptedSections()
           for (i <- 0 until list.size()) {
-            val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
-            val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
-            stringToWrite += (route.getContractRoute + ";Outbound;" + stopA + ";" + stopB + ";" + list.get(i)._3 + "\n")
-            logger.trace(route.getContractRoute + " - outbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
+            if (list.get(i)._3 / 60 > 1) {
+              val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
+              val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
+              stringToWrite += (route.getContractRoute + ";Outbound;" + stopA + ";" + stopB + ";" + (list.get(i)._3 / 60).toInt + ";-1;2015/02/12 09:30:55\n")
+              logger.trace(route.getContractRoute + " - outbound disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](stopA, stopB, list.get(i)._3))
+            }
           }
         }
 
@@ -64,9 +71,15 @@ class Network {
     }
 
     if (stringToWrite.length > 0) {
-      val fileWriter = new PrintWriter(new File("E:\\Workspace\\iBusMonitorTestDirectory\\Output\\Disruptions_" + dateFormat.format(Calendar.getInstance().getTime()) + ".csv"))
-      fileWriter.write("Route;Direction;SectionStart;SectionEnd;DisruptionObserved\n" + stringToWrite)
+      val file = new File(outputFilename)
+      if (file.exists()) {
+        file.renameTo(new File("E:\\Workspace\\disruptions\\DisruptionReport_" + prevTime + ".csv"))
+      }
+
+      val fileWriter = new PrintWriter(new File(outputFilename))
+      fileWriter.write("Route;Direction;SectionStart;SectionEnd;DisruptionObserved;Trend;TimeFirstDetected\n" + stringToWrite)
       fileWriter.close()
+      prevTime = dateFormat.format(Calendar.getInstance().getTime())
     }
 
     logger.info("FINISH:Calculating disruptions")
