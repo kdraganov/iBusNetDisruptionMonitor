@@ -1,11 +1,11 @@
 package main
 
-import java.io.{File, FileNotFoundException}
+import java.io.{File, FileNotFoundException, FilenameFilter}
 import java.nio.file._
 
 import lbsl.{Network, Observation}
 import org.slf4j.LoggerFactory
-import utility.Configuration
+import utility.{Configuration, CustomFilenameFilter}
 
 import scala.collection.JavaConversions._
 import scala.io.Source
@@ -18,6 +18,7 @@ class iBusMonitor() extends Thread {
   private val busNetwork: Network = new Network
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private var updateNetwork: Boolean = false;
+  private val feedFilenameFilter: FilenameFilter = new CustomFilenameFilter(Configuration.getFeedFileStartWith, Configuration.getFeedFileEndWith)
 
   override
   def run() {
@@ -39,14 +40,16 @@ class iBusMonitor() extends Thread {
         if (event_path != null) {
           val fileName = event_path.toString()
           if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-            logger.info("New file detected: {}", fileName)
-            processFile(new File(Configuration.getFeedsDirectory().getAbsolutePath + "\\" + fileName))
+            if (fileName.startsWith(Configuration.getFeedFileStartWith) && fileName.endsWith(Configuration.getFeedFileEndWith)) {
+              logger.info("New file detected: {}", fileName)
+              processFile(new File(Configuration.getFeedsDirectory().getAbsolutePath + "\\" + fileName))
+            }
           }
         }
       }
       key.reset()
       //check for any unprocessed files
-      for (file <- Configuration.getFeedsDirectory().listFiles() if file.isFile) {
+      for (file <- Configuration.getFeedsDirectory().listFiles(feedFilenameFilter) if file.isFile) {
         processFile(file)
       }
 
@@ -65,7 +68,7 @@ class iBusMonitor() extends Thread {
   }
 
   private def processFile(file: File): Unit = {
-    if (file.getName.startsWith(Configuration.getFeedFileStartWith) && file.getName.endsWith(Configuration.getFeedFileEndWith)) {
+//    if (file.getName.startsWith(Configuration.getFeedFileStartWith) && file.getName.endsWith(Configuration.getFeedFileEndWith)) {
       if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
         logger.info("Processing file [{}].", file.getAbsolutePath)
         while (file.exists()) {
@@ -77,9 +80,9 @@ class iBusMonitor() extends Thread {
         }
         updateNetwork = true
       }
-    } else {
-      logger.trace("File [{}] not for processing.", file.getName)
-    }
+//    } else {
+    //      logger.trace("File [{}] not for processing.", file.getName)
+    //    }
   }
 
   @throws(classOf[FileNotFoundException])

@@ -10,20 +10,27 @@ class SystemMonitor extends Thread {
   private val runtime: Runtime = Runtime.getRuntime()
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   //in milliseconds
-  private val sleepInterval: Long = 1000 * 5
+  private val sleepInterval: Long = 1000 * 30
   private val kb = 1024
   private val mb = kb * kb
+  private var maxUsedMemory: Long = 0
 
   override
   def run(): Unit = {
     while (true) {
-      logger.info("Used memory - [{}] Total memory - [{}] Max memory - [{}] Free memory - [{}] Available processors (cores) - [{}]",
+      val usedMemory = getUsedMemory()
+      if (usedMemory > maxUsedMemory) {
+        maxUsedMemory = usedMemory
+      }
+      logger.info("Used memory - [{}] Max used memory - [{}] Total memory - [{}] Max memory - [{}] Free memory - [{}] Available processors (cores) - [{}]",
         Array[Object](
-          getMBString(getUsedMemory()),
+          getMBString(usedMemory),
+          getMBString(maxUsedMemory),
           getMBString(runtime.totalMemory()),
           if (runtime.maxMemory() == Long.MaxValue) "No Limit" else getMBString(runtime.maxMemory()),
           getMBString(runtime.freeMemory()),
           runtime.availableProcessors().toString))
+
       try {
         Thread.sleep(sleepInterval)
       } catch {

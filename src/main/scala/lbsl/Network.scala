@@ -42,18 +42,18 @@ class Network {
       for (i: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
         val totalDisruptionTime = Duration(route.getTotalDisruptionTime(i), SECONDS).toMinutes
         if (totalDisruptionTime > 5) {
-          logger.trace(route.getContractRoute + " - total " + Route.getDirectionString(i) + " disruption observed = " + totalDisruptionTime + " minutes")
-
+          val direction = Route.getDirectionString(i)
+          logger.trace(route.getContractRoute + " - total " + direction + " disruption observed = " + totalDisruptionTime + " minutes")
           val list = route.getDisruptedSections(i)
-          for (i <- 0 until list.size()) {
-            if (list.get(i)._3 / 60 > 1) {
-              val stopA = busStopMap.getOrElse(list.get(i)._1, null).getName()
-              val stopB = busStopMap.getOrElse(list.get(i)._2, null).getName()
-              stringToWrite += (route.getContractRoute + "," + Route.getDirectionString(i) + ",\"" + stopA + "\",\"" + stopB + "\"," + (list.get(i)._3 / 60) + ",0,2015/02/12 09:30:55\n")
-              logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](route.getContractRoute, Route.getDirectionString(i), stopA, stopB, list.get(i)._3.toString))
+          for (section <- 0 until list.size()) {
+            val disruptionInMinutes = list.get(section)._3 / 60
+            if (disruptionInMinutes > 1) {
+              val stopA = busStopMap.getOrElse(list.get(section)._1, null).getName()
+              val stopB = busStopMap.getOrElse(list.get(section)._2, null).getName()
+              stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruptionInMinutes + "," + totalDisruptionTime + ",0,2015/02/12 09:30:55\n")
+              logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](route.getContractRoute, Route.getDirectionString(i), stopA, stopB, disruptionInMinutes.toString))
             }
           }
-
         }
       }
 
@@ -67,7 +67,7 @@ class Network {
       }
 
       val fileWriter = new PrintWriter(new File(outputFilename))
-      fileWriter.write("Route,Direction,SectionStart,SectionEnd,DisruptionObserved,Trend,TimeFirstDetected\n" + stringToWrite)
+      fileWriter.write("Route,Direction,SectionStart,SectionEnd,DisruptionObserved,RouteTotal,Trend,TimeFirstDetected\n" + stringToWrite)
       fileWriter.close()
       prevTime = dateFormat.format(Calendar.getInstance().getTime())
     }

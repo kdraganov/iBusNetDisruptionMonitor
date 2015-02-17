@@ -1,7 +1,7 @@
 package main
 
 import org.slf4j.LoggerFactory
-import utility.{Configuration, SystemMonitor}
+import utility.{Configuration, FeedThread, SystemMonitor}
 
 /**
  * Created by Konstantin on 20/01/2015.
@@ -22,11 +22,14 @@ object app {
     //    logger.debug("Loaded below settings:")
     //    configuration.test()
 
-
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start()
+
     val systemMonitor = new SystemMonitor()
     systemMonitor.start()
+
+    val feedThread = new FeedThread()
+    feedThread.start()
   }
 
 }

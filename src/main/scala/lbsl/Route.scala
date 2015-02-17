@@ -23,6 +23,8 @@ class Route(private val contractRoute: String) {
   private var sectionWMADelays: Array[Array[Double]] = null
   private val sections: Array[Array[ArrayList[Tuple2[Double, Date]]]] = new Array[Array[ArrayList[Tuple2[Double, Date]]]](2)
 
+  private var totalDelay: Array[Double] = Array[Double](0, 0)
+
   /**
    *
    * @return boolean true if there are active (e.g. have received reading in the past 1h or so) buses on the route
@@ -105,7 +107,7 @@ class Route(private val contractRoute: String) {
     generateSections()
     //we need at least two observations
     for ((busId, observationList) <- busesOnRoute if observationList.size() > 1) {
-      logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.size())
+      //      logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.size())
       var prevObservation = observationList.get(0)
       for (i <- 1 until observationList.size()) {
         val observation = observationList.get(i)
@@ -127,6 +129,7 @@ class Route(private val contractRoute: String) {
       }
     }
     calculateSectionDelay()
+    calculateTotalDisruption()
   }
 
   def calculateSectionDelay(): Unit = {
@@ -204,15 +207,18 @@ class Route(private val contractRoute: String) {
     return busStopSequence(getOutboundIndex).toArray(new Array[String](busStopSequence(getOutboundIndex).size()))
   }
 
-
   def getContractRoute = contractRoute
 
-  def getTotalDisruptionTime(direction: Integer): Double = {
-    var sum: Double = 0
-    for (section: Double <- sectionWMADelays(getIndex(direction))) {
-      sum += section
+  def getTotalDisruptionTime(direction: Integer): Double = totalDelay(getIndex(direction))
+
+  private def calculateTotalDisruption(): Unit = {
+    for (i <- 0 until totalDelay.length) {
+      var sum: Double = 0
+      for (section: Double <- sectionWMADelays(i)) {
+        sum += section
+      }
+      totalDelay(i) = sum
     }
-    return sum
   }
 
   def getDisruptedSections(direction: Integer): ArrayList[Tuple3[String, String, Double]] = {
@@ -220,8 +226,9 @@ class Route(private val contractRoute: String) {
     var stopA: String = null
     var stopB: String = null
     var disruption: Double = 0
+    //TODO: consider only small sections e.g. 3-5 stops - probably best to link it to the feed interval
     for (i <- 0 until sectionWMADelays(getIndex(direction)).length) {
-      if (sectionWMADelays(getIndex(direction))(i) > 0) {
+      if (sectionWMADelays(getIndex(direction))(i) > 60 * 2) {
         //continue or start of disrupted section
         if (stopA == null) {
           stopA = busStopSequence(getIndex(direction)).get(i)
@@ -230,7 +237,9 @@ class Route(private val contractRoute: String) {
       } else if (stopA != null) {
         // end of sectionDisruption
         stopB = busStopSequence(getIndex(direction)).get(i)
-        disruptedSections.add((stopA, stopB, disruption))
+        if (disruption > 10 * 60) {
+          disruptedSections.add((stopA, stopB, disruption))
+        }
         stopA = null
         disruption = 0
       }
