@@ -39,7 +39,7 @@ class Observation() extends Ordered[Observation] {
 
 
   def init(feed: String): Boolean = {
-    val tokens: Array[String] = feed.split(Configuration.getFeedFileDelimiter)
+    val tokens: Array[String] = feed.split(Configuration.getFeedFileRegex)
     scheduleDeviation = Integer.parseInt(tokens(Observation.ScheduleDeviation))
     tripType = Integer.parseInt(tokens(Observation.TripType))
 

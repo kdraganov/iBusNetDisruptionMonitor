@@ -10,7 +10,7 @@ class SystemMonitor extends Thread {
   private val runtime: Runtime = Runtime.getRuntime()
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   //in milliseconds
-  private val sleepInterval: Long = 1000 * 60
+  private val sleepInterval: Long = 1000 * 5
   private val kb = 1024
   private val mb = kb * kb
 

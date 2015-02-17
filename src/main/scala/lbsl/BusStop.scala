@@ -5,8 +5,8 @@ package lbsl
  */
 class BusStop(
                private var name: String,
-               private var longitude: Double,
-               private var latitude: Double) {
+               private var latitude: Double,
+               private var longitude: Double) {
 
 
   def getName(): String = name
@@ -39,6 +39,6 @@ object BusStop {
   final val Heading: Integer = 6
   final val StopArea: Integer = 7
   final val VirtualBusStop: Integer = 8
-  final val Latitude: Integer = 9
-  final val Longitude: Integer = 10
+
+  final val NumberOfFields: Integer = 9
 }

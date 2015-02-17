@@ -22,6 +22,7 @@ object app {
     //    logger.debug("Loaded below settings:")
     //    configuration.test()
 
+
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start()
     val systemMonitor = new SystemMonitor()

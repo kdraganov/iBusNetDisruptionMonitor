@@ -46,10 +46,8 @@ class iBusMonitor() extends Thread {
       }
       key.reset()
       //check for any unprocessed files
-      for (file <- Configuration.getFeedsDirectory().listFiles()) {
-        if (file.isFile) {
-          processFile(file)
-        }
+      for (file <- Configuration.getFeedsDirectory().listFiles() if file.isFile) {
+        processFile(file)
       }
 
       if (updateNetwork) {

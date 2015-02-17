@@ -3,6 +3,7 @@ package utility
 
 import java.io.File
 import java.text.SimpleDateFormat
+import java.util.Date
 
 import org.slf4j.LoggerFactory
 
@@ -32,6 +33,20 @@ object Configuration {
   private var feedFileDelimiter: String = null
   private var feedFileHeader: Boolean = false
   private var feedUpdateInterval: Integer = null
+  private var latestFeedTime: Date = new Date(0)
+
+  private val quoteRegex: String = "(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"
+  private final val DataValidityTimeInHours: Integer = 2
+
+  def getLatestFeedTime = latestFeedTime.getTime
+
+  def getLatestFeedDateTime = latestFeedTime.getTime
+
+  def setLatestFeedDateTime(date: Date): Unit = {
+    latestFeedTime = date
+  }
+
+  def getDataValidityTimeInHours = DataValidityTimeInHours
 
   def getTitle(): String = title
 
@@ -58,11 +73,15 @@ object Configuration {
 
   def getBusStopFileDelimiter: String = busStopFileDelimiter
 
+  def getBusStopFileRegex: String = busStopFileDelimiter + quoteRegex
+
   def getBusStopFileHeader: Boolean = busStopFileHeader
 
   def getBusRouteFile: File = busRouteFile
 
   def getBusRouteFileDelimiter: String = busRouteFileDelimiter
+
+  def getBusRouteFileRegex: String = busRouteFileDelimiter + quoteRegex
 
   def getBusRouteFileHeader: Boolean = busRouteFileHeader
 
@@ -71,6 +90,8 @@ object Configuration {
   def getFeedFileEndWith: String = feedFileEndWith
 
   def getFeedFileDelimiter: String = feedFileDelimiter
+
+  def getFeedFileRegex: String = feedFileDelimiter + quoteRegex
 
   def getFeedFileHeader: Boolean = feedFileHeader
 

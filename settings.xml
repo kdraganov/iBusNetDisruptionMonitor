@@ -3,18 +3,18 @@
     <title>iBusNetDisruptionMonitor</title>
     <mode>Dev</mode>
     <!--Dev;Test;Prod-->
-    <feedsDir>E:\Workspace\iBusMonitorTestDirectory</feedsDir>
-    <processedDirectory>E:\Workspace\iBusMonitorTestDirectory\ProcessedFiles</processedDirectory>
+    <feedsDir>E:\Workspace\iBusNetTestDirectory</feedsDir>
+    <processedDirectory>E:\Workspace\iBusNetTestDirectory\ProcessedFiles</processedDirectory>
     <monitorThreadSleepInterval>2500</monitorThreadSleepInterval>
     <!--In milliseconds-->
     <busStopFile>
-        <path>E:\Workspace\iBusMonitorTestDirectory\bus-stops.csv</path>
-        <delimiter>\t</delimiter>
+        <path>E:\Workspace\iBusNetTestDirectory\busNetwork\bus-stops.csv</path>
+        <delimiter>,</delimiter>
         <header>true</header>
         <!-- 1-true, 0-false -->
     </busStopFile>
     <routesFile>
-        <path>E:\Workspace\iBusMonitorTestDirectory\bus-sequences.csv</path>
+        <path>E:\Workspace\iBusNetTestDirectory\busNetwork\bus-sequences.csv</path>
         <delimiter>,</delimiter>
         <header>true</header>
     </routesFile>
