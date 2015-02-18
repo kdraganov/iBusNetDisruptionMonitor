@@ -14,10 +14,11 @@ class FeedThread extends Thread {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   //every half second
-  private val sleepInterval: Long = 5000
+  private val sleepInterval: Long = 1000
   private val feedDirectory: File = new File("E:\\Workspace\\iBusNetTestDirectory\\Feeds")
   private val feedFilenameFilter = new CustomFilenameFilter("CC_", ".csv")
-  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "_YYYYMMDD_NNNNN")
+  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "YYYYMMDD_NNNNN")
+
   private val operatorBuffers: ArrayBuffer[Buffer[File]] = new ArrayBuffer[Buffer[File]]()
 
   def init(): Unit = {
@@ -41,16 +42,18 @@ class FeedThread extends Thread {
   override
   def run(): Unit = {
     init()
-    while (!operatorBuffers.isEmpty) {
-      for (i <- 0 until operatorBuffers.size) {
-        val buffer = operatorBuffers(i)
+    var terminate = false
+    while (!terminate) {
+      terminate = true
+      for (buffer <- operatorBuffers) {
         if (!buffer.isEmpty) {
           copy(buffer.remove(0))
         }
-        if (buffer.isEmpty) {
-          operatorBuffers.remove(i)
+        if (!buffer.isEmpty) {
+          terminate = false
         }
       }
+
       try {
         Thread.sleep(sleepInterval)
       } catch {

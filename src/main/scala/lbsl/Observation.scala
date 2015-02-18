@@ -18,6 +18,9 @@ class Observation() extends Ordered[Observation] {
   private var longitude: Double = 0
   private var latitude: Double = 0
   private var eventId: Integer = 0
+  private var operator: String = null
+
+  def getOperator: String = operator
 
   def getVehicleId: Integer = vehicleId
 
@@ -38,7 +41,7 @@ class Observation() extends Ordered[Observation] {
   def getEventId: Integer = eventId
 
 
-  def init(feed: String): Boolean = {
+  def init(feed: String, companyOperator: String): Boolean = {
     val tokens: Array[String] = feed.split(Configuration.getFeedFileRegex)
     scheduleDeviation = Integer.parseInt(tokens(Observation.ScheduleDeviation))
     tripType = Integer.parseInt(tokens(Observation.TripType))
@@ -54,6 +57,7 @@ class Observation() extends Ordered[Observation] {
     timeOfData = Configuration.getDateFormat().parse(tokens(Observation.TimeOfData))
     contractRoute = tokens(Observation.ContractRoute)
     lastStopShortDesc = tokens(Observation.LastStopShortDesc)
+    operator = companyOperator
     return true
   }
 

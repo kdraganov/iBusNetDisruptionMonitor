@@ -1,7 +1,11 @@
 package main
 
+import lbsl.Observation
 import org.slf4j.LoggerFactory
 import utility.{Configuration, FeedThread, SystemMonitor}
+
+import scala.collection.mutable.ArrayBuffer
+import scala.util.Sorting
 
 /**
  * Created by Konstantin on 20/01/2015.
@@ -21,6 +25,30 @@ object app {
     //TODO:REMOVE
     //    logger.debug("Loaded below settings:")
     //    configuration.test()
+
+//    var buffer = new ArrayBuffer[Observation]()
+//    val list =  Array[String](
+//      "19599;VW1875;BF60VJK;2014/12/01 13:26:43;;89011;734534;186;3;18;3224;410;-0.24404;51.53564;0;;",
+//      "19599;VW1875;BF60VJK;2014/01/01 12:26:43;;89011;734534;186;3;18;3224;410;-0.24404;51.53564;0;;",
+//      "19599;VW1875;BF60VJK;2015/12/01 12:26:43;;89011;734534;186;3;18;3224;410;-0.24404;51.53564;0;;",
+//      "19599;VW1875;BF60VJK;2014/12/01 12:26:43;;89011;734534;186;3;18;3224;410;-0.24404;51.53564;0;;",
+//      "19599;VW1875;BF60VJK;2014/12/01 02:26:43;;89011;734534;186;3;18;3224;410;-0.24404;51.53564;0;;")
+//    for(x <- list){
+//      val temp = new Observation
+//      temp.init(x, "test")
+//      buffer.append(temp)
+//    }
+//
+//    for(item <-buffer){
+//      logger.debug(item.getTimeOfData.toString)
+//    }
+//    logger.debug("\nSORTED:\n")
+////    buffer = buffer.sortBy(x => x.getTimeOfData)
+//    buffer = Sorting.stableSort(buffer)
+//  //  buffer.sortWith(_.compare(_) > 0)
+//    for(item <-buffer){
+//      logger.debug(item.getTimeOfData.toString)
+//    }
 
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start()

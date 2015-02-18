@@ -32,6 +32,7 @@ class iBusMonitor() extends Thread {
     val watchService = FileSystems.getDefault.newWatchService()
     Paths.get(Configuration.getFeedsDirectory().getAbsolutePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
 
+
     while (true) {
       val key = watchService.take()
       val events = key.pollEvents()
@@ -54,7 +55,12 @@ class iBusMonitor() extends Thread {
       }
 
       if (updateNetwork) {
-        busNetwork.updateStatus()
+        try {
+          busNetwork.updateStatus()
+        } catch {
+          case e: Exception => logger.error("TERMINATING - iBusMonitorThread interrupted:", e)
+            System.exit(-1)
+        }
         updateNetwork = false
       }
 
@@ -63,26 +69,23 @@ class iBusMonitor() extends Thread {
       } catch {
         case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
       }
-
     }
   }
 
   private def processFile(file: File): Unit = {
-//    if (file.getName.startsWith(Configuration.getFeedFileStartWith) && file.getName.endsWith(Configuration.getFeedFileEndWith)) {
-      if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
-        logger.info("Processing file [{}].", file.getAbsolutePath)
-        while (file.exists()) {
-          try {
-            processFeed(file)
-          } catch {
-            case e: FileNotFoundException => logger.error("Exception:", e)
-          }
+    if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
+      logger.info("Processing file [{}].", file.getAbsolutePath)
+      while (file.exists()) {
+        try {
+          processFeed(file)
+        } catch {
+          case e: FileNotFoundException => logger.error("Exception:", e)
+          case e: Exception => logger.error("TERMINATING - iBusMonitorThread interrupted:", e)
+            System.exit(-1)
         }
-        updateNetwork = true
       }
-//    } else {
-    //      logger.trace("File [{}] not for processing.", file.getName)
-    //    }
+      updateNetwork = true
+    }
   }
 
   @throws(classOf[FileNotFoundException])
@@ -91,7 +94,7 @@ class iBusMonitor() extends Thread {
     //Check whether to drop header
     for (line <- source.getLines().drop(if (Configuration.getFeedFileHeader) 1 else 0)) {
       val observation = new Observation()
-      if (observation.init(line)) {
+      if (observation.init(line, file.getName)) {
         busNetwork.addObservation(observation)
       }
     }

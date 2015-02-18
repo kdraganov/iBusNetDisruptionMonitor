@@ -6,7 +6,7 @@ import java.util.Calendar
 
 import org.slf4j.LoggerFactory
 import uk.me.jstott.jcoord.OSRef
-import utility.Configuration
+import utility.{Configuration, MissingData}
 
 import scala.collection.mutable
 import scala.concurrent.duration._
@@ -22,10 +22,12 @@ class Network {
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
 
   private val outputFilename: String = "E:\\Workspace\\iBusNetTestDirectory\\DisruptionReports\\Report.csv"
-  private var prevTime: String = null
+  private val dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
+
+  private var prevTime: String = dateFormat.format(Calendar.getInstance().getTime())
+
   //TODO: add list of disruptions
 
-  private val dateFormat = new SimpleDateFormat("yyyyMMdd_hhmmss")
 
   def updateStatus(): Unit = {
     calculateDisruptions()
@@ -45,12 +47,13 @@ class Network {
           val direction = Route.getDirectionString(i)
           logger.trace(route.getContractRoute + " - total " + direction + " disruption observed = " + totalDisruptionTime + " minutes")
           val list = route.getDisruptedSections(i)
-          for (section <- 0 until list.size()) {
-            val disruptionInMinutes = list.get(section)._3 / 60
+          for (section <- 0 until list.size) {
+            val disruptionInMinutes = list(section)._3 / 60
             if (disruptionInMinutes > 1) {
-              val stopA = busStopMap.getOrElse(list.get(section)._1, null).getName()
-              val stopB = busStopMap.getOrElse(list.get(section)._2, null).getName()
-              stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruptionInMinutes + "," + totalDisruptionTime + ",0,2015/02/12 09:30:55\n")
+              val stopA = busStopMap.getOrElse(list(section)._1, null).getName()
+              val stopB = busStopMap.getOrElse(list(section)._2, null).getName()
+              val time = Configuration.getDateFormat().format(Configuration.getLatestFeedDateTime)
+              stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruptionInMinutes + "," + totalDisruptionTime + ",0," + time + "\n")
               logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](route.getContractRoute, Route.getDirectionString(i), stopA, stopB, disruptionInMinutes.toString))
             }
           }
@@ -82,7 +85,11 @@ class Network {
    *         otherwise false
    */
   def addObservation(observation: Observation): Boolean = {
-    val route = routeMap.getOrElse(observation.getContractRoute, null)
+    var route = routeMap.getOrElse(observation.getContractRoute, null)
+    //check if it a 24h service bus
+    if (route == null && observation.getContractRoute.startsWith("N")) {
+      route = routeMap.getOrElse(observation.getContractRoute.substring(1), null)
+    }
     if (route != null) {
       val tempDate = observation.getTimeOfData
       if (tempDate.getTime > Configuration.getLatestFeedTime) {
@@ -91,7 +98,8 @@ class Network {
       route.addObservation(observation)
       return true
     }
-    logger.warn("Bus route [{}] missing from bus network.", observation.getContractRoute)
+    MissingData.addMissingRoute(observation.getContractRoute, observation.getOperator)
+    //    logger.warn("Bus route [{}] missing from bus network.", observation.getContractRoute)
     return false
   }
 
@@ -144,6 +152,10 @@ class Network {
         route.addBusStop(tokens(Route.StopCodeLBSL), direction, Integer.parseInt(tokens(Route.Sequence)) - 1)
       }
     }
+    if (routeKey != null && route != null) {
+      routeMap.put(routeKey, route)
+    }
+
     source.close
   }
 
