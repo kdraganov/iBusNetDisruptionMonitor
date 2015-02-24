@@ -17,7 +17,7 @@ class FeedThread extends Thread {
   private val sleepInterval: Long = 1000
   private val feedDirectory: File = new File("E:\\Workspace\\iBusNetTestDirectory\\Feeds")
   private val feedFilenameFilter = new CustomFilenameFilter("CC_", ".csv")
-  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "YYYYMMDD_NNNNN")
+  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "_")//"YYYYMMDD_NNNNN")
 
   private val operatorBuffers: ArrayBuffer[Buffer[File]] = new ArrayBuffer[Buffer[File]]()
 

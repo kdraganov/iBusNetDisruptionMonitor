@@ -32,7 +32,6 @@ class iBusMonitor() extends Thread {
     val watchService = FileSystems.getDefault.newWatchService()
     Paths.get(Configuration.getFeedsDirectory().getAbsolutePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
 
-
     while (true) {
       val key = watchService.take()
       val events = key.pollEvents()
@@ -56,7 +55,7 @@ class iBusMonitor() extends Thread {
 
       if (updateNetwork) {
         try {
-          busNetwork.updateStatus()
+          busNetwork.update()
         } catch {
           case e: Exception => logger.error("TERMINATING - iBusMonitorThread interrupted:", e)
             System.exit(-1)

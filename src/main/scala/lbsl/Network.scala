@@ -28,8 +28,7 @@ class Network {
 
   //TODO: add list of disruptions
 
-
-  def updateStatus(): Unit = {
+  def update(): Unit = {
     calculateDisruptions()
     //TODO:GENERATE FILE FROM THE DISRUPTIONS
   }
@@ -39,7 +38,7 @@ class Network {
     logger.info("BEGIN:Calculating disruptions...")
     var stringToWrite = ""
     for ((routeNumber, route) <- routeMap if route.isRouteActive()) {
-      route.update()
+      route.run()
       //TODO: Capture below in a method and loop for both inbound and outbound directions
       for (i: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
         val totalDisruptionTime = Duration(route.getTotalDisruptionTime(i), SECONDS).toMinutes
@@ -85,6 +84,13 @@ class Network {
    *         otherwise false
    */
   def addObservation(observation: Observation): Boolean = {
+    //check if last stop is recognised
+    if (busStopMap.getOrElse(observation.getLastStopShortDesc, null) == null) {
+      //bus stop is missing no point of adding it
+      MissingData.addMissingStop(observation.getLastStopShortDesc, observation.getContractRoute, observation.getOperator)
+      return false
+    }
+
     var route = routeMap.getOrElse(observation.getContractRoute, null)
     //check if it a 24h service bus
     if (route == null && observation.getContractRoute.startsWith("N")) {
@@ -148,15 +154,24 @@ class Network {
           routeKey = tokens(Route.Route)
           route = new Route(routeKey)
         }
-        val direction = if (Integer.parseInt(tokens(1)) % 2 == 0) Route.Inbound else Route.Outbound
-        route.addBusStop(tokens(Route.StopCodeLBSL), direction, Integer.parseInt(tokens(Route.Sequence)) - 1)
+        val run = Integer.parseInt(tokens(Route.Run))
+        //For simplicity only consider the major outbound/inbound runs
+        if (run == 1) {
+          route.addBusStop(tokens(Route.StopCodeLBSL), Route.Outbound, Integer.parseInt(tokens(Route.Sequence)))
+        } else if (run == 2) {
+          route.addBusStop(tokens(Route.StopCodeLBSL), Route.Inbound, Integer.parseInt(tokens(Route.Sequence)))
+        }
       }
     }
     if (routeKey != null && route != null) {
       routeMap.put(routeKey, route)
     }
-
     source.close
+
+    for((key, route) <- routeMap){
+      route.generateSections()
+    }
+
   }
 
   /**

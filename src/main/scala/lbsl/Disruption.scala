@@ -9,7 +9,7 @@ class Disruption {
 
   val timeFirstDetected: Date = null
   val busRoute: String = null
-  val delayDetected: Integer = 0
+  val delayDetected: Double = 0
   val sectionStart: String = null
   val sectionEnd: String = null
   val clearedAt: Date = null
@@ -24,9 +24,13 @@ object Disruption {
   //  Serious - 21 - 40 min
   //  Severe - 41 - 60 min
 
-  final val Moderate: Integer = 10
-  final val Serious: Integer = 21
-  final val Severe: Integer = 41
+  final val SectionModerate: Integer = 10
+  final val SectionSerious: Integer = 20
+  final val SectionSevere: Integer = 40
+
+  final val RouteSerious: Integer = 30
+  //40
+  final val RouteSevere: Integer = 50 //60
 
   final val TrendImproving = 1
   final val TrendStable = 0

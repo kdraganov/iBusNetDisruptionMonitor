@@ -47,7 +47,7 @@ class Observation() extends Ordered[Observation] {
     tripType = Integer.parseInt(tokens(Observation.TripType))
 
     //TODO: revise & improve this condition
-    if (scheduleDeviation == -2147483645 || !lbsl.TripType.isActiveTrip(tripType)) {
+    if (scheduleDeviation == Observation.NegativeIntegerError || !lbsl.TripType.isActiveTrip(tripType)) {
       return false
     }
     vehicleId = Integer.parseInt(tokens(Observation.VehicleId))
@@ -83,4 +83,5 @@ object Observation {
   final val EventId: Integer = 14
   final val Duration: Integer = 15
 
+  final val NegativeIntegerError: Integer = -2147483645
 }

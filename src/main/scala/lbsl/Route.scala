@@ -3,7 +3,7 @@ package lbsl
 import java.util.Date
 
 import org.slf4j.LoggerFactory
-import utility.{Configuration, MissingData}
+import utility.Configuration
 
 import scala.collection.mutable.{ArrayBuffer, HashMap}
 import scala.concurrent.duration._
@@ -13,7 +13,7 @@ import scala.concurrent.duration._
  * Direction either outbound (1) or inbound (2)
  */
 
-class Route(private val contractRoute: String) {
+class Route(private val contractRoute: String) extends Runnable {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private val busStopSequence: Array[ArrayBuffer[String]] = Array(new ArrayBuffer[String](), new ArrayBuffer[String]())
@@ -23,6 +23,27 @@ class Route(private val contractRoute: String) {
   private val sections: Array[Array[ArrayBuffer[Tuple2[Double, Date]]]] = new Array[Array[ArrayBuffer[Tuple2[Double, Date]]]](2)
 
   private val totalDelay: Array[Double] = Array[Double](0, 0)
+
+  override
+  def run(): Unit = {
+    clearSections()
+    //we need at least two observations
+    for ((busId, observationList) <- busesOnRoute if observationList.size > 1) {
+      // logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.size())
+      var prevObservation = observationList(0)
+      for (i <- 1 until observationList.size) {
+        val observation = observationList(i)
+        val timeLostInSeconds = observation.getScheduleDeviation - prevObservation.getScheduleDeviation
+        //not interested if bus has gained time
+        if (timeLostInSeconds > 0) {
+          calculateChange(prevObservation, observation, timeLostInSeconds)
+        }
+        prevObservation = observation
+      }
+    }
+    calculateWMASectionDelay()
+    calculateTotalDisruption()
+  }
 
   /**
    *
@@ -73,40 +94,45 @@ class Route(private val contractRoute: String) {
 
   private def calculateChange(prevObservation: Observation, observation: Observation, timeLostInSeconds: Double): Unit = {
     //JUST FOR TESTING
-    if (busStopSequence(0).indexOf(prevObservation.getLastStopShortDesc) == -1 && busStopSequence(1).indexOf(prevObservation.getLastStopShortDesc) == -1) {
-      MissingData.addMissingStop(prevObservation.getLastStopShortDesc, prevObservation.getContractRoute, prevObservation.getOperator)
-    }
-    if (busStopSequence(0).indexOf(observation.getLastStopShortDesc) == -1 && busStopSequence(1).indexOf(observation.getLastStopShortDesc) == -1) {
-      MissingData.addMissingStop(observation.getLastStopShortDesc, observation.getContractRoute, observation.getOperator)
-    }
+    //    if (busStopSequence(0).indexOf(prevObservation.getLastStopShortDesc) == -1 && busStopSequence(1).indexOf(prevObservation.getLastStopShortDesc) == -1) {
+    //      logger.debug("Missing stop {} from file {} ", prevObservation.getLastStopShortDesc, prevObservation.getOperator)
+    //      //MissingData.addMissingStop(prevObservation.getLastStopShortDesc, prevObservation.getContractRoute, prevObservation.getOperator)
+    //    }
+    //    if (busStopSequence(0).indexOf(observation.getLastStopShortDesc) == -1 && busStopSequence(1).indexOf(observation.getLastStopShortDesc) == -1) {
+    //      logger.debug("Missing stop {} from file {} ", observation.getLastStopShortDesc, observation.getOperator)
+    //      //MissingData.addMissingStop(observation.getLastStopShortDesc, observation.getContractRoute, observation.getOperator)
+    //    }
     //END TESTING SECTION
 
     val temp = getDirectionAndStopIndexes(prevObservation.getLastStopShortDesc, observation.getLastStopShortDesc)
+    var direction: Integer = 0
+    var prevLastStopIndex: Integer = 0
+    var lastStopIndex: Integer = 0
+    if (temp != null) {
+      direction = temp._1
+      prevLastStopIndex = temp._2
+      lastStopIndex = temp._3
+    }
     // readings not from the same direction
-    if (temp != null && (temp._3 - temp._2 - 1) > 0) {
-      val timeLostInSecondsPerSection = timeLostInSeconds / (temp._3 - temp._2 + 1)
-      for (i <- temp._2.intValue() to Math.min(temp._3.intValue(), busStopSequence(temp._1).size - 2)) {
+    if ((lastStopIndex - prevLastStopIndex - 1) > 0) {
+      val timeLostInSecondsPerSection = timeLostInSeconds / (lastStopIndex - prevLastStopIndex + 1)
+      for (i <- prevLastStopIndex.intValue() to Math.min(lastStopIndex, busStopSequence(direction).size - 2)) {
         //logger.debug("Adding difference to inbound section {}", i)
-        sections(temp._1)(i).append((timeLostInSecondsPerSection, observation.getTimeOfData))
+        sections(direction)(i).append((timeLostInSecondsPerSection, observation.getTimeOfData))
       }
     }
 
   }
 
-  //  private def addDifference(stopA: String, stopB: String, difference: Integer, date: Date): Unit = {
-  //    val temp = getDirectionAndStopIndexes(stopA, stopB)
-  //    // readings not from the same direction
-  //    if (temp != null && (temp._3 - temp._2 - 1) > 0) {
-  //      val diff = difference / (temp._3 - temp._2 - 1)
-  //      for (i <- (temp._2.intValue() + 1) until temp._3) {
-  //        //logger.debug("Adding difference to inbound section {}", i)
-  //        sections(temp._1)(i).add((diff, date))
-  //      }
-  //    }
-  //
-  //  }
+  private def clearSections(): Unit = {
+    for (section <- sections) {
+      for (buffer <- section) {
+        buffer.clear()
+      }
+    }
+  }
 
-  private def generateSections(): Unit = {
+  def generateSections(): Unit = {
     for (i <- 0 until sections.length) {
       //TODO:Init only the direction the route has - waste of space otherwise
       sections(i) = new Array[ArrayBuffer[Tuple2[Double, Date]]](Math.max(busStopSequence(i).size - 1, 0))
@@ -116,36 +142,7 @@ class Route(private val contractRoute: String) {
     }
   }
 
-  def update(): Unit = {
-    generateSections()
-    //we need at least two observations
-    for ((busId, observationList) <- busesOnRoute if observationList.size > 1) {
-      //      logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.size())
-      var prevObservation = observationList(0)
-      for (i <- 1 until observationList.size) {
-        val observation = observationList(i)
-        val timeLostInSeconds = observation.getScheduleDeviation - prevObservation.getScheduleDeviation
-        //not interested if bus has gained time
-        if (timeLostInSeconds > 0) {
-          calculateChange(prevObservation, observation, timeLostInSeconds)
-        }
-        //        if (prevObservation.getLastStopShortDesc != observation.getLastStopShortDesc) {
-        //          //INCORRECT
-        //          val difference = observation.getScheduleDeviation - prevObservation.getScheduleDeviation //schedule deviation difference in seconds
-        //
-        //          //logger.debug("Adding stopA = {} and stopB = {} with schedule deviation difference = {} and time of data {}",
-        //          //   Array[Object](preSectionObservation.getLastStopShortDesc, postSectionObservation.getLastStopShortDesc, difference.toString, postSectionObservation.getTimeOfData.toString))
-        //
-        //          addDifference(prevObservation.getLastStopShortDesc, observation.getLastStopShortDesc, difference, observation.getTimeOfData)
-        prevObservation = observation
-        //        }
-      }
-    }
-    calculateSectionDelay()
-    calculateTotalDisruption()
-  }
-
-  def calculateSectionDelay(): Unit = {
+  def calculateWMASectionDelay(): Unit = {
     sectionWMADelays = Array(new Array[Double](sections(getOutboundIndex).size), new Array[Double](sections(getInboundIndex).size))
     for (direction <- 0 until sectionWMADelays.length) {
       //for each direction
@@ -154,9 +151,6 @@ class Route(private val contractRoute: String) {
         if (segment != null) {
           // need to sort it by time
           val tempArray = segment.sortBy(_._2)
-          //          new Array[Tuple2[Double, Date]](segment.size)
-          //          segment.copyToArray(tempArray)
-          //          tempArray.sortBy(_._2)
           var weightSum: Double = 0
           var weight = 0
           for (i <- 0 until tempArray.length) {
@@ -170,29 +164,6 @@ class Route(private val contractRoute: String) {
         }
       }
     }
-
-
-    //logger.debug("Route {} inbound deviation = {} ", getContractRoute, inboundScheduleDeviation)
-
-    //    for (x <- 0 until outboundSections.length) {
-    //      val segment = outboundSections(x)
-    //      if (segment != null) {
-    //        val tempArray = new Array[Tuple2[Integer, Date]](segment.size())
-    //        segment.toArray(tempArray).sortBy(_._2)
-    //        var weightSum = 0
-    //        var weight = 0
-    //        for (i <- 0 until tempArray.length) {
-    //          weight += (i + 1)
-    //          weightSum += tempArray(i)._1 * (i + 1)
-    //        }
-    //        outbound(x) = 0
-    //        if (weight > 0 && (weightSum / weight) > 0) {
-    //          outbound(x) = weightSum / weight
-    //        }
-    //        outboundScheduleDeviation += outbound(x)
-    //      }
-    //    }
-    //logger.debug("Route {} outbound deviation = {} ", getContractRoute, outboundScheduleDeviation)
   }
 
   def addObservation(observation: Observation): Unit = {
@@ -205,13 +176,15 @@ class Route(private val contractRoute: String) {
     busStopSequence(direction - 1).append(busStopCode)
   }
 
-  def addBusStop(busStopCode: String, direction: Integer, index: Integer): Unit = {
-    if (index > busStopSequence(direction - 1).size) {
-      busStopSequence(direction - 1).insert(busStopSequence(direction - 1).size, busStopCode)
+  def addBusStop(busStopCode: String, direction: Integer, sequence: Integer): Unit = {
+    val index = sequence - 1
+    val directionIndex = direction - 1
+    if (index > busStopSequence(directionIndex).size) {
+      busStopSequence(directionIndex).insert(busStopSequence(directionIndex).size, busStopCode)
     } else if (index < 0) {
-      busStopSequence(direction - 1).insert(0, busStopCode)
+      busStopSequence(directionIndex).insert(0, busStopCode)
     } else {
-      busStopSequence(direction - 1).insert(index, busStopCode)
+      busStopSequence(directionIndex).insert(index, busStopCode)
     }
   }
 
@@ -291,7 +264,7 @@ object Route {
   final val StopName: Integer = 6
   final val LocationEasting: Integer = 7
   final val LocationNorthing: Integer = 8
-  final val Heading: Integer = 9
+  final val BusStopHeading: Integer = 9
   final val VirtualBusStop: Integer = 10
 
   final val NumberOfFields: Integer = 11
