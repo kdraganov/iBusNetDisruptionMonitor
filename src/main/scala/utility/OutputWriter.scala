@@ -2,9 +2,8 @@ package utility
 
 import java.io.{File, FileNotFoundException, PrintWriter}
 import java.text.SimpleDateFormat
-import java.util.Calendar
+import java.util.{Calendar, Date}
 
-import lbsl.Disruption
 import org.slf4j.LoggerFactory
 
 /**
@@ -24,20 +23,16 @@ class OutputWriter {
 
   private var output: String = ""
 
-  def write(contractRoute: String, disruption: Disruption): Unit = {
-    val stopA = busStopMap.getOrElse(disruption.getSectionStartBusStop, null).getName()
-    val stopB = busStopMap.getOrElse(disruption.getSectionEndBusStop, null).getName()
-    output += "Route,Direction,SectionStart,SectionEnd,DisruptionObserved,RouteTotal,Trend,TimeFirstDetected\n"
+  def write(contractRoute: String, direction: String, stopA: String, stopB: String, delayInMinutes: Integer, routeTotalDelayMinutes: Integer, trend: Integer, timeFirstDetected: Date): Unit = {
     output += contractRoute + ","
-    output += Direction + ","
-    output += SectionStart + ","
-    output += SectionEnd + ","
-    output += disruption.getDelayInMinutes + ","
-    output += RouteTotal + ","
-    output += disruption.getTrend + ","
-    output += disruption.getTimeFirstDetected + "\n"
-    //    output += (contractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruption.getDelayInMinutes + "," + totalDisruptionTime + ",0," + disruption.getTimeFirstDetected + "\n")
-    //    logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](route.getContractRoute, Route.getDirectionString(run), stopA, stopB, disruption.getDelayInMinutes.toString))
+    output += direction + ","
+    output += stopA + ","
+    output += stopB + ","
+    output += delayInMinutes + ","
+    output += routeTotalDelayMinutes + ","
+    output += trend + ","
+    output += timeFirstDetected + "\n"
+    logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](contractRoute, direction, stopA, stopB, delayInMinutes.toString))
   }
 
 
@@ -54,7 +49,7 @@ class OutputWriter {
         val fileWriter = new PrintWriter(new File(outputFilename))
         fileWriter.write("Route,Direction,SectionStart,SectionEnd,DisruptionObserved,RouteTotal,Trend,TimeFirstDetected\n" + output)
         fileWriter.close()
-        //TODO: here notify fron ent of change
+        //TODO: here notify front ent of change
         prevTime = dateFormat.format(Calendar.getInstance().getTime())
       }
     } catch {

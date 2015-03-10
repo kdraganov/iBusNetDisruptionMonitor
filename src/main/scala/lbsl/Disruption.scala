@@ -5,13 +5,10 @@ import java.util.{Calendar, Date}
 /**
  * Created by Konstantin on 04/02/2015.
  */
-class Disruption(var sectionStart: String, var sectionEnd: String, var delaySeconds: Double) {
+class Disruption(var sectionStart: String, var sectionEnd: String, var delaySeconds: Double, private val timeFirstDetected: Date = Calendar.getInstance().getTime()) {
 
-  private val timeFirstDetected: Date = Calendar.getInstance().getTime()
   private var clearedAt: Date = null
   private var trend: Integer = Disruption.TrendWorsening
-
-//  def getBusRoute: String = busRoute
 
   def getSectionStartBusStop: String = sectionStart
 

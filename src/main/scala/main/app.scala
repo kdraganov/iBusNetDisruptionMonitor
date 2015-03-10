@@ -54,7 +54,7 @@ object app {
 
     val subDir = "February"
     //    val subDir = "December"
-    val operator = "ABELON"
+    val operator = "RATP"
     //    val operator = "ARRIVA"
     //    val operator = "CTPLUS"
     //    val operator = "GOAHD"

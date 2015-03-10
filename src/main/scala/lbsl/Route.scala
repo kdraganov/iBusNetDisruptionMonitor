@@ -23,14 +23,13 @@ class Route(private val contractRoute: String) extends Runnable {
   private var sectionWMADelays: Array[Array[Double]] = null
   private val sections: Array[Array[ArrayBuffer[Tuple2[Double, Date]]]] = new Array[Array[ArrayBuffer[Tuple2[Double, Date]]]](2)
 
-  //private val totalDelay: Array[Double] = Array[Double](0, 0)
   private val disruptionList: Array[ArrayBuffer[Disruption]] = new Array[ArrayBuffer[Disruption]](2)
 
   private final val MinTimeLossSeconds: Integer = 90
 
   override
   def run(): Unit = {
-    //MOVE THIS TO INIT METHOD
+    //TODO:MOVE THIS TO INIT METHOD
     disruptionList(0) = new ArrayBuffer[Disruption]
     disruptionList(1) = new ArrayBuffer[Disruption]
 
@@ -50,13 +49,12 @@ class Route(private val contractRoute: String) extends Runnable {
       }
     }
     updateDisruptions()
-    //    calculateWMASectionDelay()
-    //    calculateTotalDisruption()
   }
 
-  def getDisruptions(run: Integer): ArrayBuffer[Disruption] ={
+  def getDisruptions(run: Integer): ArrayBuffer[Disruption] = {
     return disruptionList(getIndex(run))
   }
+
   /**
    *
    * @return boolean true if there are active (e.g. have received reading in the past 1h or so) buses on the route
@@ -110,7 +108,13 @@ class Route(private val contractRoute: String) extends Runnable {
 
   def getContractRoute = contractRoute
 
-  def getTotalDisruptionTime(direction: Integer): Integer = 99999 //totalDelay(getIndex(direction))
+  def getTotalDisruptionTime(direction: Integer): Integer = {
+    var sum: Double = 0
+    for (section <- sectionWMADelays(getIndex(direction))) {
+      sum += section
+    }
+    return (sum / 60).toInt
+  }
 
   /**
    * Sort observation and remove old elements and remove observation list from map if no observations
@@ -203,17 +207,18 @@ class Route(private val contractRoute: String) extends Runnable {
     for (run <- 0 until sectionWMADelays.length) {
 
       //SIMPLE TEST FOR DIVERSIONS
-//      if(busesOnRoute.size > 5){
-//        for (i <- 4 until sectionWMADelays(run).length) {
-//          val one = sectionWMADelays(run)(i - 4)
-//          val two = sectionWMADelays(run)(i - 3)
-//          val three = sectionWMADelays(run)(i - 2)
-//          val four = sectionWMADelays(run)(i - 1)
-//          if (one.equals(two) && three.equals(four) && one.equals(three)) {
-//            logger.debug("POSSIBLE DIVERSION route {} between {} and {}", Array[Object](getContractRoute, busStopSequence(run)(i - 4), busStopSequence(run)(i - 1)))
-//          }
-//        }
-//      }
+      if (busesOnRoute.size > 5) {
+        for (i <- 4 until sectionWMADelays(run).length) {
+          val one = sectionWMADelays(run)(i - 4)
+          val two = sectionWMADelays(run)(i - 3)
+          val three = sectionWMADelays(run)(i - 2)
+          val four = sectionWMADelays(run)(i - 1)
+          if (one.equals(two) && three.equals(four) && one.equals(three)) {
+            logger.debug("POSSIBLE DIVERSION route {} between {} and {}", Array[Object](getContractRoute, busStopSequence(run)(i - 4), busStopSequence(run)(i - 1)))
+          }
+        }
+      }
+
       var sectionStartStopIndex: Integer = null
       var disruptionSeconds: Double = 0
       for (i <- 0 until sectionWMADelays(run).length) {
@@ -223,7 +228,7 @@ class Route(private val contractRoute: String) extends Runnable {
             sectionStartStopIndex = i
           } else {
             // large section - possible diversion
-            if (i - sectionStartStopIndex > Configuration.getMaxSectionLength) {
+            if (i - sectionStartStopIndex >= Configuration.getMaxSectionLength) {
               if (disruptionSeconds < Configuration.getSectionMediumThreshold) {
                 //not interested - shift start of the section
                 disruptionSeconds -= sectionWMADelays(run)(sectionStartStopIndex)
@@ -286,30 +291,6 @@ class Route(private val contractRoute: String) extends Runnable {
     return itemOrder + 1
   }
 
-  //  def getDisruptedSections(direction: Integer): ArrayBuffer[Tuple3[String, String, Double]] = {
-  //    val disruptedSections = new ArrayBuffer[Tuple3[String, String, Double]]()
-  //    var stopA: String = null
-  //    var stopB: String = null
-  //    var disruption: Double = 0
-  //    //TODO: consider only small sections e.g. 3-5 stops - probably best to link it to the feed interval
-  //    for (i <- 0 until sectionWMADelays(getIndex(direction)).length) {
-  //      if (sectionWMADelays(getIndex(direction))(i) > 60 * 2) {
-  //        //continue or start of disrupted section
-  //          stopA = busStopSequence(getIndex(direction))(i)
-  //        }
-  //        disruption += sectionWMADelays(getIndex(direction))(i)
-  //      } else if (stopA != null) {
-  //        // end of sectionDisruption
-  //        stopB = busStopSequence(getIndex(direction))(i)
-  //        if (disruption > 10 * 60) {
-  //          disruptedSections.append((stopA, stopB, disruption))
-  //        }
-  //        stopA = null
-  //        disruption = 0
-  //      }
-  //    }
-  //    return disruptedSections
-  //  }
 
   private def getIndex(direction: Integer): Integer = {
     if (direction == Route.Inbound) {

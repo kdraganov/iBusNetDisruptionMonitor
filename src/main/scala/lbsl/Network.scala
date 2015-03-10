@@ -1,15 +1,10 @@
 package lbsl
 
-import java.io.{File, PrintWriter}
-import java.text.SimpleDateFormat
-import java.util.Calendar
-
 import org.slf4j.LoggerFactory
 import uk.me.jstott.jcoord.OSRef
-import utility.{Configuration, MissingData}
+import utility.{Configuration, MissingData, OutputWriter}
 
 import scala.collection.mutable
-import scala.concurrent.duration._
 import scala.io.Source
 
 /**
@@ -21,75 +16,26 @@ class Network {
   private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
 
-  private val outputFilename: String = "E:\\Workspace\\iBusNetTestDirectory\\DisruptionReports\\Report.csv"
-  private val dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
-
-  private var prevTime: String = dateFormat.format(Calendar.getInstance().getTime())
-
-  //TODO: add list of disruptions
-
   def update(): Unit = {
     calculateDisruptions()
-    //TODO:GENERATE FILE FROM THE DISRUPTIONS
   }
 
+  /**
+   *
+   * @param code the bus stop LBSL code
+   * @return the bus stop if it exists,
+   *         otherwise null
+   */
+  def getBusStop(code: String): BusStop = busStopMap.getOrElse(code, null)
 
-  private def calculateDisruptions(): Unit = {
-    logger.info("BEGIN:Calculating disruptions...")
-    var stringToWrite = ""
-    for ((routeNumber, route) <- routeMap if route.isRouteActive()) {
-      route.run()
-      for (run: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
-        val list = route.getDisruptions(run)
-        if(list != null){
-          val totalDisruptionTime = route.getTotalDisruptionTime(run)
-          val direction = Route.getDirectionString(run)
-          for(disruption: Disruption <- list){
-            val stopA = busStopMap.getOrElse(disruption.getSectionStartBusStop, null).getName()
-            val stopB = busStopMap.getOrElse(disruption.getSectionEndBusStop, null).getName()
-            stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruption.getDelayInMinutes + "," + totalDisruptionTime + ",0," + disruption.getTimeFirstDetected + "\n")
-            logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](route.getContractRoute, Route.getDirectionString(run), stopA, stopB, disruption.getDelayInMinutes.toString))
-          }
-        }
+  /**
+   *
+   * @param number the bus route number
+   * @return the bus route if exists,
+   *         otherwise null
+   */
+  def getRoute(number: String): Route = routeMap.getOrElse(number, null)
 
-      }
-//
-//      for (i: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
-//        val totalDisruptionTime = route.getTotalDisruptionTime(i)
-//        if (totalDisruptionTime > 5) {
-//          val direction = Route.getDirectionString(i)
-//          logger.trace(route.getContractRoute + " - total " + direction + " disruption observed = " + totalDisruptionTime + " minutes")
-//          val list = route.getDisruptedSections(i)
-//          for (section <- 0 until list.size) {
-//            val disruptionInMinutes = list(section)._3 / 60
-//            if (disruptionInMinutes > 1) {
-//              val stopA = busStopMap.getOrElse(list(section)._1, null).getName()
-//              val stopB = busStopMap.getOrElse(list(section)._2, null).getName()
-//              val time = Configuration.getDateFormat().format(Configuration.getLatestFeedDateTime)
-//              stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruptionInMinutes + "," + totalDisruptionTime + ",0," + time + "\n")
-//              logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](route.getContractRoute, Route.getDirectionString(i), stopA, stopB, disruptionInMinutes.toString))
-//            }
-//          }
-//        }
-//      }
-
-    }
-    //TODO: check if directory exists and if not try to create it
-    //TODO: java.io.FileNotFoundException: E:\Workspace\iBusNetTestDirectory\DisruptionReports\Report.csv (The process cannot access the file because it is being used by another process)
-    if (stringToWrite.length > 0) {
-      val file = new File(outputFilename)
-      if (file.exists()) {
-        file.renameTo(new File("E:\\Workspace\\iBusNetTestDirectory\\DisruptionReports\\Report_" + prevTime + ".csv"))
-      }
-
-      val fileWriter = new PrintWriter(new File(outputFilename))
-      fileWriter.write("Route,Direction,SectionStart,SectionEnd,DisruptionObserved,RouteTotal,Trend,TimeFirstDetected\n" + stringToWrite)
-      fileWriter.close()
-      prevTime = dateFormat.format(Calendar.getInstance().getTime())
-    }
-
-    logger.info("FINISH:Calculating disruptions")
-  }
 
   /**
    *
@@ -182,26 +128,37 @@ class Network {
     }
     source.close
 
-    for((key, route) <- routeMap){
+    for ((key, route) <- routeMap) {
       route.generateSections()
     }
 
   }
 
-  /**
-   *
-   * @param code the bus stop LBSL code
-   * @return the bus stop if it exists,
-   *         otherwise null
-   */
-  protected def getBusStop(code: String): BusStop = busStopMap.getOrElse(code, null)
+  private def calculateDisruptions(): Unit = {
+    logger.info("BEGIN:Calculating disruptions...")
+    val outputWriter = new OutputWriter()
 
-  /**
-   *
-   * @param number the bus route number
-   * @return the bus route if exists,
-   *         otherwise null
-   */
-  protected def getRoute(number: String): Route = routeMap.getOrElse(number, null)
-
+    for ((routeNumber, route) <- routeMap if route.isRouteActive()) {
+      route.run()
+      for (run: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
+        val list = route.getDisruptions(run)
+        if (list != null) {
+          val totalDisruptionTime = route.getTotalDisruptionTime(run)
+          val direction = Route.getDirectionString(run)
+          for (disruption: Disruption <- list) {
+            outputWriter.write(route.getContractRoute,
+              direction,
+              busStopMap.getOrElse(disruption.getSectionStartBusStop, null).getName(),
+              busStopMap.getOrElse(disruption.getSectionEndBusStop, null).getName(),
+              disruption.getDelayInMinutes,
+              totalDisruptionTime,
+              disruption.getTrend,
+              disruption.getTimeFirstDetected)
+          }
+        }
+      }
+    }
+    outputWriter.save()
+    logger.info("FINISH:Calculating disruptions")
+  }
 }
