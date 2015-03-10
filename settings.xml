@@ -28,6 +28,7 @@
     </feedFile>
     <dateFormat>yyyy/MM/dd HH:mm:ss</dateFormat>
     <disruption>
+        <!-- times in seconds -->
         <sectionMediumThreshold>1200</sectionMediumThreshold>
         <sectionSeriousThreshold>2400</sectionSeriousThreshold>
         <sectionSevereThreshold>3600</sectionSevereThreshold>

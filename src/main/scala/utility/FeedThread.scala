@@ -10,14 +10,13 @@ import scala.collection.mutable.{ArrayBuffer, Buffer}
 /**
  * Created by Konstantin on 17/02/2015.
  */
-class FeedThread extends Thread {
+class FeedThread(private val subDir: String, private val operator: String, private val sleepInterval: Long = 1000) extends Thread {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-  //every half second
-  private val sleepInterval: Long = 1000
-  private val feedDirectory: File = new File("E:\\Workspace\\iBusNetTestDirectory\\Feeds")
+
+  private val feedDirectory: File = new File("E:\\Workspace\\iBusNetTestDirectory\\Feeds\\" + subDir)
   private val feedFilenameFilter = new CustomFilenameFilter("CC_", ".csv")
-  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "ABELON_YYYYMMDD_NNNNN")//"_")
+  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", operator + "_YYYYMMDD_NNNNN")
 
   private val operatorBuffers: ArrayBuffer[Buffer[File]] = new ArrayBuffer[Buffer[File]]()
 

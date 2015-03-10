@@ -32,7 +32,7 @@ object MissingData {
     for ((route, operator) <- missingRoutes) {
       output += " | " + route + " => " + operator
     }
-    logger.debug("MISSING BUS ROUTES: {}", output)
+    logger.trace("MISSING BUS ROUTES: {}", output)
   }
 
   def logStops(): Unit = {
@@ -40,7 +40,7 @@ object MissingData {
     for ((stop, route) <- missingBusStops) {
       output += " | " + stop + " => " + route
     }
-    logger.debug("MISSING BUS STOPS: {}", output)
+    logger.trace("MISSING BUS STOPS: {}", output)
   }
 
 }
