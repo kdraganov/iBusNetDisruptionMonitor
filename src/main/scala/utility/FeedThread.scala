@@ -17,7 +17,7 @@ class FeedThread extends Thread {
   private val sleepInterval: Long = 1000
   private val feedDirectory: File = new File("E:\\Workspace\\iBusNetTestDirectory\\Feeds")
   private val feedFilenameFilter = new CustomFilenameFilter("CC_", ".csv")
-  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "_")//"YYYYMMDD_NNNNN")
+  private val operatorFilenameFilter = new CustomFilenameFilter("CC_", "ABELON_YYYYMMDD_NNNNN")//"_")
 
   private val operatorBuffers: ArrayBuffer[Buffer[File]] = new ArrayBuffer[Buffer[File]]()
 
@@ -64,7 +64,7 @@ class FeedThread extends Thread {
   }
 
   private def copy(file: File): Unit = {
-    logger.trace("Copying file [{}] to {}.", file.getName, Configuration.getFeedsDirectory().getName)
+    //logger.trace("Copying file [{}] to {}.", file.getName, Configuration.getFeedsDirectory().getName)
     val sourceFile = FileSystems.getDefault.getPath(file.getAbsolutePath)
     val destinationFile = FileSystems.getDefault.getPath(Configuration.getFeedsDirectory().getAbsolutePath, file.getName)
     Files.copy(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)

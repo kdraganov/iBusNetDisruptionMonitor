@@ -40,6 +40,12 @@ class Observation() extends Ordered[Observation] {
 
   def getEventId: Integer = eventId
 
+  def isValid: Boolean = {
+    if (scheduleDeviation == Observation.NegativeIntegerError) {
+      return false
+    }
+    return true
+  }
 
   def init(feed: String, companyOperator: String): Boolean = {
     val tokens: Array[String] = feed.split(Configuration.getFeedFileRegex)
@@ -50,6 +56,7 @@ class Observation() extends Ordered[Observation] {
     if (scheduleDeviation == Observation.NegativeIntegerError || !lbsl.TripType.isActiveTrip(tripType)) {
       return false
     }
+
     vehicleId = Integer.parseInt(tokens(Observation.VehicleId))
     longitude = tokens(Observation.Longitude).toDouble
     latitude = tokens(Observation.Latitude).toDouble

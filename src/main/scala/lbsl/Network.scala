@@ -39,25 +39,39 @@ class Network {
     var stringToWrite = ""
     for ((routeNumber, route) <- routeMap if route.isRouteActive()) {
       route.run()
-      //TODO: Capture below in a method and loop for both inbound and outbound directions
-      for (i: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
-        val totalDisruptionTime = Duration(route.getTotalDisruptionTime(i), SECONDS).toMinutes
-        if (totalDisruptionTime > 5) {
-          val direction = Route.getDirectionString(i)
-          logger.trace(route.getContractRoute + " - total " + direction + " disruption observed = " + totalDisruptionTime + " minutes")
-          val list = route.getDisruptedSections(i)
-          for (section <- 0 until list.size) {
-            val disruptionInMinutes = list(section)._3 / 60
-            if (disruptionInMinutes > 1) {
-              val stopA = busStopMap.getOrElse(list(section)._1, null).getName()
-              val stopB = busStopMap.getOrElse(list(section)._2, null).getName()
-              val time = Configuration.getDateFormat().format(Configuration.getLatestFeedDateTime)
-              stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruptionInMinutes + "," + totalDisruptionTime + ",0," + time + "\n")
-              logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](route.getContractRoute, Route.getDirectionString(i), stopA, stopB, disruptionInMinutes.toString))
-            }
+      for (run: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
+        val list = route.getDisruptions(run)
+        if(list != null){
+          val totalDisruptionTime = route.getTotalDisruptionTime(run)
+          val direction = Route.getDirectionString(run)
+          for(disruption: Disruption <- list){
+            val stopA = busStopMap.getOrElse(disruption.getSectionStartBusStop, null).getName()
+            val stopB = busStopMap.getOrElse(disruption.getSectionEndBusStop, null).getName()
+            stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruption.getDelayInMinutes + "," + totalDisruptionTime + ",0," + disruption.getTimeFirstDetected + "\n")
+            logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](route.getContractRoute, Route.getDirectionString(run), stopA, stopB, disruption.getDelayInMinutes.toString))
           }
         }
+
       }
+//
+//      for (i: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
+//        val totalDisruptionTime = route.getTotalDisruptionTime(i)
+//        if (totalDisruptionTime > 5) {
+//          val direction = Route.getDirectionString(i)
+//          logger.trace(route.getContractRoute + " - total " + direction + " disruption observed = " + totalDisruptionTime + " minutes")
+//          val list = route.getDisruptedSections(i)
+//          for (section <- 0 until list.size) {
+//            val disruptionInMinutes = list(section)._3 / 60
+//            if (disruptionInMinutes > 1) {
+//              val stopA = busStopMap.getOrElse(list(section)._1, null).getName()
+//              val stopB = busStopMap.getOrElse(list(section)._2, null).getName()
+//              val time = Configuration.getDateFormat().format(Configuration.getLatestFeedDateTime)
+//              stringToWrite += (route.getContractRoute + "," + direction + ",\"" + stopA + "\",\"" + stopB + "\"," + disruptionInMinutes + "," + totalDisruptionTime + ",0," + time + "\n")
+//              logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] seconds. ", Array[Object](route.getContractRoute, Route.getDirectionString(i), stopA, stopB, disruptionInMinutes.toString))
+//            }
+//          }
+//        }
+//      }
 
     }
     //TODO: check if directory exists and if not try to create it

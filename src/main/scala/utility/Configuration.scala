@@ -35,8 +35,27 @@ object Configuration {
   private var feedUpdateInterval: Integer = null
   private var latestFeedTime: Date = new Date(0)
 
+  private var sectionMediumThreshold: Integer = 0
+  private var sectionSeriousThreshold: Integer = 0
+  private var sectionSevereThreshold: Integer = 0
+  private var routeSeriousThreshold: Integer = 0
+  private var routeSevereThreshold: Integer = 0
+  private var maxSectionLength: Integer = 0
+
   private val quoteRegex: String = "(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"
   private final val DataValidityTimeInHours: Integer = 2
+
+  def getSectionMediumThreshold: Integer  = sectionMediumThreshold
+
+  def getSectionSeriousThreshold: Integer  = sectionSeriousThreshold
+
+  def getSectionSevereThreshold: Integer  = sectionSevereThreshold
+
+  def getRouteSeriousThreshold: Integer  = routeSeriousThreshold
+
+  def getRouteSevereThreshold: Integer  = routeSevereThreshold
+
+  def getMaxSectionLength: Integer  = maxSectionLength
 
   def getLatestFeedTime = latestFeedTime.getTime
 
@@ -119,6 +138,13 @@ object Configuration {
     logger.trace(getFeedFileDelimiter)
     logger.trace(getFeedFileHeader.toString)
     logger.trace(feedUpdateInterval.toString)
+
+    logger.trace(sectionMediumThreshold.toString)
+    logger.trace(sectionSeriousThreshold.toString)
+    logger.trace(sectionSevereThreshold.toString)
+    logger.trace(routeSeriousThreshold.toString)
+    logger.trace(routeSevereThreshold.toString)
+    logger.trace(maxSectionLength.toString)
   }
 
   def setConfigurationFilePath(configurationFilePath: String): Unit = {
@@ -138,10 +164,20 @@ object Configuration {
     setBuStopFile(settingsXML)
     setBuRouteFile(settingsXML)
     setFeedFile(settingsXML)
+    setDisruptionParams(settingsXML)
   }
 
   def update(): Unit = {
     init()
+  }
+
+  private def setDisruptionParams(settingsXML: Elem): Unit = {
+    sectionMediumThreshold = (settingsXML \\ "disruption" \\ "sectionMediumThreshold").text.toInt
+    sectionSeriousThreshold = (settingsXML \\ "disruption" \\ "sectionSeriousThreshold").text.toInt
+    sectionSevereThreshold = (settingsXML \\ "disruption" \\ "sectionSevereThreshold").text.toInt
+    routeSeriousThreshold = (settingsXML \\ "disruption" \\ "routeSeriousThreshold").text.toInt
+    routeSevereThreshold = (settingsXML \\ "disruption" \\ "routeSevereThreshold").text.toInt
+    maxSectionLength = (settingsXML \\ "disruption" \\ "maxSectionLength").text.toInt
   }
 
   private def setFeedFile(settingsXML: Elem): Unit = {

@@ -22,12 +22,7 @@ class iBusMonitor() extends Thread {
 
   override
   def run() {
-    logger.trace("Starting {} initialisation.", Configuration.getTitle())
-    logger.trace("****************************************************")
-    busNetwork.init()
-    logger.trace("Finished {} initialisation.", Configuration.getTitle())
-    logger.trace("****************************************************")
-    logger.trace("Start monitoring folder [{}] for new file feeds.", Configuration.getFeedsDirectory().getAbsolutePath)
+    init()
 
     val watchService = FileSystems.getDefault.newWatchService()
     Paths.get(Configuration.getFeedsDirectory().getAbsolutePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
@@ -101,6 +96,15 @@ class iBusMonitor() extends Thread {
     val sourceFile = FileSystems.getDefault.getPath(file.getAbsolutePath)
     val destinationFile = FileSystems.getDefault.getPath(Configuration.getProcessedDirectory().getAbsolutePath, file.getName)
     Files.move(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)
+  }
+
+  private def init(): Unit = {
+    logger.trace("Starting {} initialisation.", Configuration.getTitle())
+    logger.trace("****************************************************")
+    busNetwork.init()
+    logger.trace("Finished {} initialisation.", Configuration.getTitle())
+    logger.trace("****************************************************")
+    logger.trace("Start monitoring folder [{}] for new file feeds.", Configuration.getFeedsDirectory().getAbsolutePath)
   }
 
 }

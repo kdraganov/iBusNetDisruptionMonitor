@@ -27,4 +27,12 @@
         <updateInterval>300</updateInterval>
     </feedFile>
     <dateFormat>yyyy/MM/dd HH:mm:ss</dateFormat>
+    <disruption>
+        <sectionMediumThreshold>1200</sectionMediumThreshold>
+        <sectionSeriousThreshold>2400</sectionSeriousThreshold>
+        <sectionSevereThreshold>3600</sectionSevereThreshold>
+        <routeSeriousThreshold>2400</routeSeriousThreshold>
+        <routeSevereThreshold>3600</routeSevereThreshold>
+        <maxSectionLength>3</maxSectionLength>
+    </disruption>
 </configuration>
