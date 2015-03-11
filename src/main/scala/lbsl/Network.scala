@@ -17,7 +17,9 @@ class Network {
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
 
   def update(): Unit = {
+    logger.info("BEGIN:Calculating disruptions...")
     calculateDisruptions()
+    logger.info("FINISH:Calculating disruptions")
   }
 
   /**
@@ -92,7 +94,7 @@ class Network {
       if (tokens.length >= BusStop.NumberOfFields) {
         val latLng = new OSRef(tokens(BusStop.LocationEasting).toDouble, tokens(BusStop.LocationNorthing).toDouble).toLatLng()
         latLng.toWGS84()
-        busStopMap.put(tokens(BusStop.StopCodeLBSL), new BusStop(tokens(BusStop.StopName), latLng.getLat, latLng.getLng))
+        busStopMap.put(tokens(BusStop.LBSLCode), new BusStop(tokens(BusStop.StopName), tokens(BusStop.Code), tokens(BusStop.NaptanAtco), latLng.getLat, latLng.getLng))
       }
     }
     source.close
@@ -135,30 +137,35 @@ class Network {
   }
 
   private def calculateDisruptions(): Unit = {
-    logger.info("BEGIN:Calculating disruptions...")
     val outputWriter = new OutputWriter()
-
     for ((routeNumber, route) <- routeMap if route.isRouteActive()) {
       route.run()
-      for (run: Integer <- Array[Integer](Route.Outbound, Route.Inbound)) {
-        val list = route.getDisruptions(run)
-        if (list != null) {
-          val totalDisruptionTime = route.getTotalDisruptionTime(run)
-          val direction = Route.getDirectionString(run)
-          for (disruption: Disruption <- list) {
-            outputWriter.write(route.getContractRoute,
+      for (run: Integer <- Array[Integer](Route.Outbound, Route.Inbound) if route.hasDisruption(run)) {
+        val totalDisruptionTime = route.getTotalDisruptionTimeMinutes(run)
+        val direction = Route.getDirectionString(run)
+        for (disruption: Disruption <- route.getDisruptions(run)) {
+          val stopA = busStopMap.getOrElse(disruption.getSectionStartBusStop, null)
+          val stopB = busStopMap.getOrElse(disruption.getSectionEndBusStop, null)
+          if (stopA != null && stopB != null) {
+            outputWriter.write(routeNumber,
               direction,
-              busStopMap.getOrElse(disruption.getSectionStartBusStop, null).getName(),
-              busStopMap.getOrElse(disruption.getSectionEndBusStop, null).getName(),
+              stopA,
+              stopB,
               disruption.getDelayInMinutes,
               totalDisruptionTime,
               disruption.getTrend,
               disruption.getTimeFirstDetected)
+          } else {
+            if (stopA == null) {
+              logger.debug("Cannot find stop {}", disruption.getSectionStartBusStop)
+            }
+            if (stopB == null) {
+              logger.debug("Cannot find stop {}", disruption.getSectionEndBusStop)
+            }
           }
         }
       }
     }
-    outputWriter.save()
-    logger.info("FINISH:Calculating disruptions")
+    outputWriter.close()
   }
 }

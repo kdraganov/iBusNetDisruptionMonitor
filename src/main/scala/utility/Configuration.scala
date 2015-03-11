@@ -41,21 +41,24 @@ object Configuration {
   private var routeSeriousThreshold: Integer = 0
   private var routeSevereThreshold: Integer = 0
   private var maxSectionLength: Integer = 0
+  private var sectionMinThreshold: Integer = 0
 
   private val quoteRegex: String = "(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"
   private final val DataValidityTimeInHours: Integer = 2
 
-  def getSectionMediumThreshold: Integer  = sectionMediumThreshold
+  def getSectionMediumThreshold: Integer = sectionMediumThreshold
 
-  def getSectionSeriousThreshold: Integer  = sectionSeriousThreshold
+  def getSectionSeriousThreshold: Integer = sectionSeriousThreshold
 
-  def getSectionSevereThreshold: Integer  = sectionSevereThreshold
+  def getSectionSevereThreshold: Integer = sectionSevereThreshold
 
-  def getRouteSeriousThreshold: Integer  = routeSeriousThreshold
+  def getRouteSeriousThreshold: Integer = routeSeriousThreshold
 
-  def getRouteSevereThreshold: Integer  = routeSevereThreshold
+  def getRouteSevereThreshold: Integer = routeSevereThreshold
 
-  def getMaxSectionLength: Integer  = maxSectionLength
+  def getMaxSectionLength: Integer = maxSectionLength
+
+  def getSectionMinThreshold: Integer = sectionMinThreshold
 
   def getLatestFeedTime = latestFeedTime.getTime
 
@@ -121,30 +124,30 @@ object Configuration {
   }
 
   def test(): Unit = {
-    logger.trace(getTitle())
-    logger.trace(getMode())
-    logger.trace(getMonitorThreadSleepInterval().toString)
-    logger.trace(getFeedsDirectory().getAbsolutePath)
-    logger.trace(getProcessedDirectory().getAbsolutePath)
-    logger.trace(getDateFormat().toString)
-    logger.trace(getBusStopFile().getAbsolutePath)
-    logger.trace(getBusStopFileDelimiter)
-    logger.trace(getBusStopFileHeader.toString)
-    logger.trace(getBusRouteFile.toString)
-    logger.trace(getBusRouteFileDelimiter)
-    logger.trace(getBusRouteFileHeader.toString)
-    logger.trace(getFeedFileStartWith)
-    logger.trace(getFeedFileEndWith)
-    logger.trace(getFeedFileDelimiter)
-    logger.trace(getFeedFileHeader.toString)
-    logger.trace(feedUpdateInterval.toString)
-
-    logger.trace(sectionMediumThreshold.toString)
-    logger.trace(sectionSeriousThreshold.toString)
-    logger.trace(sectionSevereThreshold.toString)
-    logger.trace(routeSeriousThreshold.toString)
-    logger.trace(routeSevereThreshold.toString)
-    logger.trace(maxSectionLength.toString)
+    logger.trace("Title - [{}]", getTitle())
+    logger.trace("Mode - [{}]", getMode())
+    logger.trace("MonitorThreadSleepInterval - [{}]", getMonitorThreadSleepInterval().toString)
+    logger.trace("FeedsDirectory - [{}]", getFeedsDirectory().getAbsolutePath)
+    logger.trace("ProcessedDirectory - [{}]", getProcessedDirectory().getAbsolutePath)
+    logger.trace("DateFormat - [{}]", getDateFormat().toString)
+    logger.trace("BusStopFile - [{}]", getBusStopFile().getAbsolutePath)
+    logger.trace("BusStopFileDelimiter - [{}]", getBusStopFileDelimiter)
+    logger.trace("BusStopFileHeader - [{}]", getBusStopFileHeader.toString)
+    logger.trace("BusRouteFile - [{}]", getBusRouteFile.toString)
+    logger.trace("BusRouteFileDelimiter - [{}]", getBusRouteFileDelimiter)
+    logger.trace("BusRouteFileHeader - [{}]", getBusRouteFileHeader.toString)
+    logger.trace("FeedFileStartWith - [{}]", getFeedFileStartWith)
+    logger.trace("FeedFileEndWith - [{}]", getFeedFileEndWith)
+    logger.trace("FeedFileDelimiter - [{}]", getFeedFileDelimiter)
+    logger.trace("FeedFileHeader - [{}]", getFeedFileHeader.toString)
+    logger.trace("FeedUpdateInterval - [{}]", getFeedUpdateInterval.toString)
+    logger.trace("SectionMediumThreshold - [{}]", getSectionMediumThreshold.toString)
+    logger.trace("SectionSeriousThreshold - [{}]", getSectionSeriousThreshold.toString)
+    logger.trace("SectionSevereThreshold - [{}]", getSectionSevereThreshold.toString)
+    logger.trace("RouteSeriousThreshold - [{}]", getRouteSeriousThreshold.toString)
+    logger.trace("RouteSevereThreshold - [{}]", getRouteSevereThreshold.toString)
+    logger.trace("MaxSectionLength - [{}]", getMaxSectionLength.toString)
+    logger.trace("SectionMinThreshold - [{}]", getSectionMinThreshold.toString)
   }
 
   def setConfigurationFilePath(configurationFilePath: String): Unit = {
@@ -172,12 +175,19 @@ object Configuration {
   }
 
   private def setDisruptionParams(settingsXML: Elem): Unit = {
-    sectionMediumThreshold = (settingsXML \\ "disruption" \\ "sectionMediumThreshold").text.toInt
-    sectionSeriousThreshold = (settingsXML \\ "disruption" \\ "sectionSeriousThreshold").text.toInt
-    sectionSevereThreshold = (settingsXML \\ "disruption" \\ "sectionSevereThreshold").text.toInt
-    routeSeriousThreshold = (settingsXML \\ "disruption" \\ "routeSeriousThreshold").text.toInt
-    routeSevereThreshold = (settingsXML \\ "disruption" \\ "routeSevereThreshold").text.toInt
-    maxSectionLength = (settingsXML \\ "disruption" \\ "maxSectionLength").text.toInt
+    maxSectionLength = Integer.parseInt((settingsXML \\ "disruption" \\ "maxSectionLength").text)
+
+    val timeUnit = (settingsXML \\ "disruption" \\ "@timeUnit").text
+    var multiplier = 1
+    if (timeUnit.equals("minutes")) {
+      multiplier = 60
+    }
+    sectionMediumThreshold = Integer.parseInt((settingsXML \\ "disruption" \\ "sectionMediumThreshold").text) * multiplier
+    sectionSeriousThreshold = Integer.parseInt((settingsXML \\ "disruption" \\ "sectionSeriousThreshold").text) * multiplier
+    sectionSevereThreshold = Integer.parseInt((settingsXML \\ "disruption" \\ "sectionSevereThreshold").text) * multiplier
+    routeSeriousThreshold = Integer.parseInt((settingsXML \\ "disruption" \\ "routeSeriousThreshold").text) * multiplier
+    routeSevereThreshold = Integer.parseInt((settingsXML \\ "disruption" \\ "routeSevereThreshold").text) * multiplier
+    sectionMinThreshold = Integer.parseInt((settingsXML \\ "disruption" \\ "sectionMinThreshold").text) * multiplier
   }
 
   private def setFeedFile(settingsXML: Elem): Unit = {
@@ -185,7 +195,7 @@ object Configuration {
     feedFileEndWith = (settingsXML \\ "feedFile" \\ "nameEndWith").text
     feedFileDelimiter = (settingsXML \\ "feedFile" \\ "delimiter").text
     feedFileHeader = (settingsXML \\ "feedFile" \\ "header").text.toBoolean
-    feedUpdateInterval = (settingsXML \\ "feedFile" \\ "updateInterval").text.toInt
+    feedUpdateInterval = Integer.parseInt((settingsXML \\ "feedFile" \\ "updateInterval").text)
   }
 
   private def setBuRouteFile(settingsXML: Elem): Unit = {

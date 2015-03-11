@@ -25,14 +25,10 @@ class Route(private val contractRoute: String) extends Runnable {
 
   private val disruptionList: Array[ArrayBuffer[Disruption]] = new Array[ArrayBuffer[Disruption]](2)
 
-  private final val MinTimeLossSeconds: Integer = 90
+  private val totalDelay: Array[Integer] = Array(0, 0)
 
   override
   def run(): Unit = {
-    //TODO:MOVE THIS TO INIT METHOD
-    disruptionList(0) = new ArrayBuffer[Disruption]
-    disruptionList(1) = new ArrayBuffer[Disruption]
-
     clearSections()
     //we need at least two observations
     for ((busId, observationList) <- busesOnRoute if observationList.size > 1) {
@@ -48,7 +44,30 @@ class Route(private val contractRoute: String) extends Runnable {
         prevObservation = observation
       }
     }
-    updateDisruptions()
+    calculateWMASectionDelay()
+    calculateTotalDelayPerRun()
+
+    //TODO:MOVE THIS TO INIT METHOD
+    disruptionList(0) = new ArrayBuffer[Disruption]
+    disruptionList(1) = new ArrayBuffer[Disruption]
+    for (runIndex <- 0 until sectionWMADelays.length if totalDelay(runIndex) >= Configuration.getSectionMediumThreshold) {
+      findDisruptedSections(runIndex)
+      //Check route total - possible diversions
+      if (disruptionList(runIndex).isEmpty && totalDelay(runIndex) > Configuration.getRouteSeriousThreshold) {
+        var max = 0
+        for (section <- sectionWMADelays(runIndex)) {
+          if (section > max) {
+            max = section.toInt
+          }
+        }
+        max = (max / 60)
+        logger.debug("Route {} direction {} disrupted by {} minutes [max section disruption is {}].", Array[Object](contractRoute, Route.getDirectionString(runIndex + 1), (totalDelay(runIndex) / 60).toString, max.toString))
+      }
+    }
+  }
+
+  def hasDisruption(run: Integer): Boolean = {
+    return !disruptionList(getIndex(run)).isEmpty
   }
 
   def getDisruptions(run: Integer): ArrayBuffer[Disruption] = {
@@ -99,21 +118,21 @@ class Route(private val contractRoute: String) extends Runnable {
   }
 
   def getInboundStopSequence(): ArrayBuffer[String] = {
-    return busStopSequence(getInboundIndex) //.toArray(new Array[String](busStopSequence(getInboundIndex).size))
+    return busStopSequence(getInboundIndex)
   }
 
   def getOutboundStopSequence(): ArrayBuffer[String] = {
-    return busStopSequence(getOutboundIndex) //.toArray(new Array[String](busStopSequence(getOutboundIndex).size))
+    return busStopSequence(getOutboundIndex)
   }
 
   def getContractRoute = contractRoute
 
+  def getTotalDisruptionTimeMinutes(direction: Integer): Integer = {
+    return Math.round(getTotalDisruptionTime(direction) / 60)
+  }
+
   def getTotalDisruptionTime(direction: Integer): Integer = {
-    var sum: Double = 0
-    for (section <- sectionWMADelays(getIndex(direction))) {
-      sum += section
-    }
-    return (sum / 60).toInt
+    return totalDelay(getIndex(direction))
   }
 
   /**
@@ -122,7 +141,6 @@ class Route(private val contractRoute: String) extends Runnable {
   private def updateObservations(): Unit = {
     for ((busId, observationList) <- busesOnRoute) {
       val sortedObservationList = observationList.sortBy(x => x.getTimeOfData)
-      //Collections.sort(observationList)
       // difference in MILLISECONDS
       var timeDiff = Duration(Configuration.getLatestFeedTime - sortedObservationList(0).getTimeOfData.getTime, MILLISECONDS)
       while (timeDiff.toHours > Configuration.getDataValidityTimeInHours && sortedObservationList.size > 0) {
@@ -149,22 +167,10 @@ class Route(private val contractRoute: String) extends Runnable {
       }
     }
     //logger.debug("Bus stop with LBSL id {} or {} cannot be found for route {}.", Array[Object](prevLastStop, lastStop, getContractRoute))
-
     return null
   }
 
   private def calculateChange(prevObservation: Observation, observation: Observation, scheduleDeviationDifference: Double): Unit = {
-    //JUST FOR TESTING
-    //    if (busStopSequence(0).indexOf(prevObservation.getLastStopShortDesc) == -1 && busStopSequence(1).indexOf(prevObservation.getLastStopShortDesc) == -1) {
-    //      logger.debug("Missing stop {} from file {} ", prevObservation.getLastStopShortDesc, prevObservation.getOperator)
-    //      //MissingData.addMissingStop(prevObservation.getLastStopShortDesc, prevObservation.getContractRoute, prevObservation.getOperator)
-    //    }
-    //    if (busStopSequence(0).indexOf(observation.getLastStopShortDesc) == -1 && busStopSequence(1).indexOf(observation.getLastStopShortDesc) == -1) {
-    //      logger.debug("Missing stop {} from file {} ", observation.getLastStopShortDesc, observation.getOperator)
-    //      //MissingData.addMissingStop(observation.getLastStopShortDesc, observation.getContractRoute, observation.getOperator)
-    //    }
-    //END TESTING SECTION
-
     val temp = getDirectionAndStopIndexes(prevObservation.getLastStopShortDesc, observation.getLastStopShortDesc)
     var direction: Integer = 0
     var prevLastStopIndex: Integer = 0
@@ -184,82 +190,42 @@ class Route(private val contractRoute: String) extends Runnable {
 
   }
 
-  private def clearSections(): Unit = {
-    for (section <- sections) {
-      for (buffer <- section) {
-        buffer.clear()
-      }
-    }
-  }
-
-  //  private def calculateTotalDisruption(): Unit = {
-  //    for (i <- 0 until totalDelay.length) {
-  //      var sum: Double = 0
-  //      for (section: Integer <- sectionWMADelays(i)) {
-  //        sum += section
-  //      }
-  //      totalDelay(i) = sum
-  //    }
-  //  }
-
-  private def updateDisruptions() {
-    calculateWMASectionDelay()
-    for (run <- 0 until sectionWMADelays.length) {
-
-      //SIMPLE TEST FOR DIVERSIONS
-      if (busesOnRoute.size > 5) {
-        for (i <- 4 until sectionWMADelays(run).length) {
-          val one = sectionWMADelays(run)(i - 4)
-          val two = sectionWMADelays(run)(i - 3)
-          val three = sectionWMADelays(run)(i - 2)
-          val four = sectionWMADelays(run)(i - 1)
-          if (one.equals(two) && three.equals(four) && one.equals(three)) {
-            logger.debug("POSSIBLE DIVERSION route {} between {} and {}", Array[Object](getContractRoute, busStopSequence(run)(i - 4), busStopSequence(run)(i - 1)))
-          }
+  //TODO: check for diversions
+  private def findDisruptedSections(runIndex: Integer) {
+    var sectionStartStopIndex: Integer = null
+    var disruptionSeconds: Double = 0
+    for (i <- 0 until sectionWMADelays(runIndex).length) {
+      if (sectionWMADelays(runIndex)(i) > Configuration.getSectionMinThreshold) {
+        //continue or start of disrupted section
+        if (sectionStartStopIndex == null) {
+          sectionStartStopIndex = i
         }
-      }
-
-      var sectionStartStopIndex: Integer = null
-      var disruptionSeconds: Double = 0
-      for (i <- 0 until sectionWMADelays(run).length) {
-        if (sectionWMADelays(run)(i) > MinTimeLossSeconds) {
-          //continue or start of disrupted section
-          if (sectionStartStopIndex == null) {
-            sectionStartStopIndex = i
-          } else {
-            // large section - possible diversion
-            if (i - sectionStartStopIndex >= Configuration.getMaxSectionLength) {
-              if (disruptionSeconds < Configuration.getSectionMediumThreshold) {
-                //not interested - shift start of the section
-                disruptionSeconds -= sectionWMADelays(run)(sectionStartStopIndex)
-                sectionStartStopIndex += 1
-              } else {
-                addDisruption(run, sectionStartStopIndex, i, disruptionSeconds)
-                sectionStartStopIndex = null
-                disruptionSeconds = 0
-              }
-            }
+        //          else {
+        //            // large section - possible diversion
+        //            if (i - sectionStartStopIndex >= Configuration.getMaxSectionLength) {
+        //              if (disruptionSeconds < Configuration.getSectionMediumThreshold) {
+        //                //not interested - shift start of the section
+        //                disruptionSeconds -= sectionWMADelays(run)(sectionStartStopIndex)
+        //                sectionStartStopIndex += 1
+        //              } else {
+        //                addDisruption(run, sectionStartStopIndex, i, disruptionSeconds)
+        //                sectionStartStopIndex = null
+        //                disruptionSeconds = 0
+        //              }
+        //            }
+        //          }
+        disruptionSeconds += sectionWMADelays(runIndex)(i)
+      } else {
+        if (sectionStartStopIndex != null) {
+          // end of sectionDisruption
+          if (disruptionSeconds >= Configuration.getSectionMediumThreshold) {
+            addDisruption(runIndex, sectionStartStopIndex, i, disruptionSeconds)
           }
-          disruptionSeconds += sectionWMADelays(run)(i)
-        } else {
-          if (sectionStartStopIndex != null) {
-            // end of sectionDisruption
-            if (disruptionSeconds >= Configuration.getSectionMediumThreshold) {
-              addDisruption(run, sectionStartStopIndex, i, disruptionSeconds)
-            }
-            sectionStartStopIndex = null
-            disruptionSeconds = 0
-          }
+          sectionStartStopIndex = null
+          disruptionSeconds = 0
         }
       }
     }
-    //check and get disrupted section
-    //for each detected disruption check if it sub/super set of previously detected disruptions
-  }
-
-  private def addDisruption(run: Integer, sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double): Unit = {
-    val disruption: Disruption = new Disruption(busStopSequence(run)(sectionStartStopIndex), busStopSequence(run)(sectionEndStopIndex), delaySeconds)
-    disruptionList(run).append(disruption)
   }
 
   private def calculateWMASectionDelay(): Unit = {
@@ -287,10 +253,25 @@ class Route(private val contractRoute: String) extends Runnable {
     }
   }
 
+  private def calculateTotalDelayPerRun(): Unit = {
+    for (direction <- 0 until sectionWMADelays.length) {
+      var sum: Double = 0
+      for (section <- sectionWMADelays(direction)) {
+        sum += section
+      }
+      totalDelay(direction) = Math.round(sum).toInt
+    }
+  }
+
   private def getWeight(itemOrder: Integer): Double = {
     return itemOrder + 1
   }
 
+
+  private def addDisruption(runIndex: Integer, sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double): Unit = {
+    val disruption: Disruption = new Disruption(busStopSequence(runIndex)(sectionStartStopIndex), busStopSequence(runIndex)(sectionEndStopIndex), delaySeconds)
+    disruptionList(runIndex).append(disruption)
+  }
 
   private def getIndex(direction: Integer): Integer = {
     if (direction == Route.Inbound) {
@@ -303,6 +284,13 @@ class Route(private val contractRoute: String) extends Runnable {
 
   private def getOutboundIndex = Route.Outbound - 1
 
+  private def clearSections(): Unit = {
+    for (section <- sections) {
+      for (buffer <- section) {
+        buffer.clear()
+      }
+    }
+  }
 
 }
 

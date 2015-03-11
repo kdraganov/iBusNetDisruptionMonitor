@@ -4,6 +4,7 @@ import java.io.{File, FileNotFoundException, PrintWriter}
 import java.text.SimpleDateFormat
 import java.util.{Calendar, Date}
 
+import lbsl.BusStop
 import org.slf4j.LoggerFactory
 
 /**
@@ -13,45 +14,54 @@ class OutputWriter {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
 
-  private val dateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
+  private val fileDateFormat = new SimpleDateFormat("yyyyMMdd_HHmmss")
+  private val dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss")
   private val outputDirectory: File = new File("E:\\Workspace\\iBusNetTestDirectory\\DisruptionReports")
   private val outputFilename: String = outputDirectory.getAbsolutePath + "\\Report.csv"
   private val outputFile: File = new File(outputFilename)
+  private val header: String = "Route,Direction,FromStopName,FromStopCode,ToStopName,ToStopCode,DisruptionObserved,RouteTotal,Trend,TimeFirstDetected"
 
-
-  private var prevTime: String = dateFormat.format(Calendar.getInstance().getTime())
-
+  private var prevTime: String = fileDateFormat.format(Calendar.getInstance().getTime())
   private var output: String = ""
 
-  def write(contractRoute: String, direction: String, stopA: String, stopB: String, delayInMinutes: Integer, routeTotalDelayMinutes: Integer, trend: Integer, timeFirstDetected: Date): Unit = {
+  def write(contractRoute: String, direction: String, stopA: BusStop, stopB: BusStop, delayInMinutes: Integer, routeTotalDelayMinutes: Integer, trend: Integer, timeFirstDetected: Date): Unit = {
     output += contractRoute + ","
     output += direction + ","
-    output += stopA + ","
-    output += stopB + ","
+    output += stopA.getName() + ","
+    output += stopA.getCode() + ","
+    output += stopB.getName() + ","
+    output += stopB.getCode() + ","
     output += delayInMinutes + ","
     output += routeTotalDelayMinutes + ","
     output += trend + ","
-    output += timeFirstDetected + "\n"
+    output += dateFormat.format(timeFirstDetected) + "\n"
     logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](contractRoute, direction, stopA, stopB, delayInMinutes.toString))
   }
 
+  /**
+   * Save to file if output is not empty
+   */
+  def close(): Unit = {
+    if (output.length > 0) {
+      save()
+    }
+  }
 
   //TODO: java.io.FileNotFoundException: E:\Workspace\iBusNetTestDirectory\DisruptionReports\Report.csv (The process cannot access the file because it is being used by another process)
   def save(): Unit = {
     checkOutputDirectory()
     try {
-      if (output.length > 0) {
-        if (outputFile.exists()) {
-          val newFile: File = new File(outputDirectory.getAbsolutePath + "\\Report_" + prevTime + ".csv")
-          outputFile.renameTo(newFile)
-        }
-
-        val fileWriter = new PrintWriter(new File(outputFilename))
-        fileWriter.write("Route,Direction,SectionStart,SectionEnd,DisruptionObserved,RouteTotal,Trend,TimeFirstDetected\n" + output)
-        fileWriter.close()
-        //TODO: here notify front ent of change
-        prevTime = dateFormat.format(Calendar.getInstance().getTime())
+      if (outputFile.exists()) {
+        val newFile: File = new File(outputDirectory.getAbsolutePath + "\\Report_" + prevTime + ".csv")
+        outputFile.renameTo(newFile)
       }
+
+      val fileWriter = new PrintWriter(new File(outputFilename))
+      fileWriter.write(header + "\n" + output)
+      fileWriter.close()
+      //TODO: here notify front ent of change
+      prevTime = fileDateFormat.format(Calendar.getInstance().getTime())
+
     } catch {
       case e: FileNotFoundException =>
         logger.error("File {} is in use. Unable to access it.", outputFile.getAbsolutePath)

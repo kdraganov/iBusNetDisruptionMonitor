@@ -52,17 +52,18 @@ object app {
     val systemMonitor = new SystemMonitor()
     systemMonitor.start()
 
-    val subDir = "February"
-    //    val subDir = "December"
-    val operator = "RATP"
-    //    val operator = "ARRIVA"
-    //    val operator = "CTPLUS"
-    //    val operator = "GOAHD"
-    //    val operator = "METROB"
+    //    val subDir = "February"
+    val subDir = "December"
+    //SORTED largest to smallest
+    val operator = "GOAHD"
     //    val operator = "MITRLNE"
+    //    val operator = "ARRIVA"
     //    val operator = "RATP"
-    //    val operator = "SULLVN"
+    //    val operator = "ABELON"
     //    val operator = "TRTRN"
+    //    val operator = "METROB"
+    //    val operator = "CTPLUS"
+    //    val operator = "SULLVN"
     //    val operator = ""
     val feedThread = new FeedThread(subDir, operator)
     feedThread.start()

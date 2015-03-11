@@ -14,8 +14,12 @@ class Disruption(var sectionStart: String, var sectionEnd: String, var delaySeco
 
   def getSectionEndBusStop: String = sectionEnd
 
+  def getDelay: Integer = {
+    return delaySeconds.toInt
+  }
+
   def getDelayInMinutes: Integer = {
-    return (delaySeconds / 60).toInt
+    return getDelay / 60
   }
 
   def getTimeFirstDetected: Date = timeFirstDetected

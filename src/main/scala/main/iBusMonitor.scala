@@ -43,6 +43,13 @@ class iBusMonitor() extends Thread {
         }
       }
       key.reset()
+
+      try {
+        Thread.sleep(500)
+      } catch {
+        case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
+      }
+
       //check for any unprocessed files
       for (file <- Configuration.getFeedsDirectory().listFiles(feedFilenameFilter) if file.isFile) {
         processFile(file)
