@@ -24,43 +24,46 @@ class OutputWriter {
   private var prevTime: String = fileDateFormat.format(Calendar.getInstance().getTime())
   private var output: String = ""
 
+  //TODO: need to add quotes around the bus stop names in case they have commas
   def write(contractRoute: String, direction: String, stopA: BusStop, stopB: BusStop, delayInMinutes: Integer, routeTotalDelayMinutes: Integer, trend: Integer, timeFirstDetected: Date): Unit = {
     output += contractRoute + ","
     output += direction + ","
-    output += stopA.getName() + ","
+    output += "\"" + stopA.getName() + "\","
     output += stopA.getCode() + ","
-    output += stopB.getName() + ","
+    output += "\"" + stopB.getName() + "\","
     output += stopB.getCode() + ","
     output += delayInMinutes + ","
     output += routeTotalDelayMinutes + ","
     output += trend + ","
     output += dateFormat.format(timeFirstDetected) + "\n"
-    logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](contractRoute, direction, stopA, stopB, delayInMinutes.toString))
+    logger.trace("{} - {} disrupted section between stop [{}] and stop [{}] of [{}] minutes. ", Array[Object](contractRoute, direction, stopA.getCode(), stopB.getCode(), delayInMinutes.toString))
   }
 
   /**
    * Save to file if output is not empty
    */
   def close(): Unit = {
+    checkOutputDirectory()
+    try {
+      renameCurrent()
+    } catch {
+      case e: FileNotFoundException =>
+        logger.error("File {} is in use. Unable to access it.", outputFile.getAbsolutePath)
+        logger.error("Exception:", e)
+        logger.error("Terminating application.")
+        System.exit(1)
+    }
     if (output.length > 0) {
       save()
     }
   }
 
-  //TODO: java.io.FileNotFoundException: E:\Workspace\iBusNetTestDirectory\DisruptionReports\Report.csv (The process cannot access the file because it is being used by another process)
-  def save(): Unit = {
-    checkOutputDirectory()
+  private def renameCurrent(): Unit = {
     try {
       if (outputFile.exists()) {
         val newFile: File = new File(outputDirectory.getAbsolutePath + "\\Report_" + prevTime + ".csv")
         outputFile.renameTo(newFile)
       }
-
-      val fileWriter = new PrintWriter(new File(outputFilename))
-      fileWriter.write(header + "\n" + output)
-      fileWriter.close()
-      //TODO: here notify front ent of change
-      prevTime = fileDateFormat.format(Calendar.getInstance().getTime())
 
     } catch {
       case e: FileNotFoundException =>
@@ -69,7 +72,13 @@ class OutputWriter {
         logger.error("Terminating application.")
         System.exit(1)
     }
+  }
 
+  private def save(): Unit = {
+    val fileWriter = new PrintWriter(new File(outputFilename))
+    fileWriter.write(header + "\n" + output)
+    fileWriter.close()
+    prevTime = fileDateFormat.format(Calendar.getInstance().getTime())
   }
 
   private def checkOutputDirectory() {

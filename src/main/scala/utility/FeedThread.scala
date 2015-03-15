@@ -10,7 +10,7 @@ import scala.collection.mutable.{ArrayBuffer, Buffer}
 /**
  * Created by Konstantin on 17/02/2015.
  */
-class FeedThread(private val subDir: String, private val operator: String, private val sleepInterval: Long = 1000) extends Thread {
+class FeedThread(private val subDir: String, private val operator: String, private var sleepInterval: Long = 1000) extends Thread {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
 
@@ -43,6 +43,7 @@ class FeedThread(private val subDir: String, private val operator: String, priva
     init()
     var terminate = false
     while (!terminate) {
+      speedControl()
       terminate = true
       for (buffer <- operatorBuffers) {
         if (!buffer.isEmpty) {
@@ -67,5 +68,25 @@ class FeedThread(private val subDir: String, private val operator: String, priva
     val sourceFile = FileSystems.getDefault.getPath(file.getAbsolutePath)
     val destinationFile = FileSystems.getDefault.getPath(Configuration.getFeedsDirectory().getAbsolutePath, file.getName)
     Files.copy(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)
+  }
+
+  private def speedControl(): Unit = {
+    var pause = true
+    while (pause) {
+      val speed = scala.io.Source.fromFile("E:\\Workspace\\iBusNetTestDirectory\\busNetwork\\speedControl.txt").mkString
+      speed match {
+        case "slow" => sleepInterval = 10000
+          pause = false
+        case "normal" => sleepInterval = 1000
+          pause = false
+        case "fast" => sleepInterval = 500
+          pause = false
+        case "pause" => pause = true
+          Thread.sleep(5000)
+        case default => sleepInterval = 1500
+          pause = false
+      }
+    }
+
   }
 }

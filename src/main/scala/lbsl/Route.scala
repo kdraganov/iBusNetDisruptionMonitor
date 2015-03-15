@@ -51,8 +51,17 @@ class Route(private val contractRoute: String) extends Runnable {
     disruptionList(0) = new ArrayBuffer[Disruption]
     disruptionList(1) = new ArrayBuffer[Disruption]
     for (runIndex <- 0 until sectionWMADelays.length if totalDelay(runIndex) >= Configuration.getSectionMediumThreshold) {
-      findDisruptedSections(runIndex)
-      //Check route total - possible diversions
+      findDisruptedSections(runIndex, Configuration.getSectionMinThreshold)
+      //check for possible diversions
+
+      if (disruptionList(runIndex).isEmpty && totalDelay(runIndex) > Configuration.getRouteSeriousThreshold) {
+        findDisruptedSections(runIndex, 120)
+      }
+
+      if (disruptionList(runIndex).isEmpty && totalDelay(runIndex) > Configuration.getRouteSeriousThreshold) {
+        findDisruptedSections(runIndex, 90)
+      }
+
       if (disruptionList(runIndex).isEmpty && totalDelay(runIndex) > Configuration.getRouteSeriousThreshold) {
         var max = 0
         for (section <- sectionWMADelays(runIndex)) {
@@ -191,11 +200,11 @@ class Route(private val contractRoute: String) extends Runnable {
   }
 
   //TODO: check for diversions
-  private def findDisruptedSections(runIndex: Integer) {
+  private def findDisruptedSections(runIndex: Integer, sectionMinThreshold: Integer) {
     var sectionStartStopIndex: Integer = null
     var disruptionSeconds: Double = 0
     for (i <- 0 until sectionWMADelays(runIndex).length) {
-      if (sectionWMADelays(runIndex)(i) > Configuration.getSectionMinThreshold) {
+      if (sectionWMADelays(runIndex)(i) > sectionMinThreshold) {
         //continue or start of disrupted section
         if (sectionStartStopIndex == null) {
           sectionStartStopIndex = i

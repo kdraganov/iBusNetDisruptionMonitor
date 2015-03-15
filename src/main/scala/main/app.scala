@@ -53,9 +53,12 @@ object app {
     systemMonitor.start()
 
     //    val subDir = "February"
-    val subDir = "December"
+//    val subDir = "Demo"
+    val subDir = "Demo Short"
+    //    val subDir = "December"
     //SORTED largest to smallest
-    val operator = "GOAHD"
+    val operator = ""
+    //    val operator = "GOAHD"
     //    val operator = "MITRLNE"
     //    val operator = "ARRIVA"
     //    val operator = "RATP"
@@ -64,7 +67,7 @@ object app {
     //    val operator = "METROB"
     //    val operator = "CTPLUS"
     //    val operator = "SULLVN"
-    //    val operator = ""
+
     val feedThread = new FeedThread(subDir, operator)
     feedThread.start()
   }
