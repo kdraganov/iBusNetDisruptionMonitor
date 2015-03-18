@@ -10,7 +10,7 @@ import scala.collection.mutable.{ArrayBuffer, Buffer}
 /**
  * Created by Konstantin on 17/02/2015.
  */
-class FeedThread(private val subDir: String, private val operator: String, private var sleepInterval: Long = 1000) extends Thread {
+class FeedThread(private val subDir: String, private val operator: String, private var sleepInterval: Long = 1500) extends Thread {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
 
@@ -77,13 +77,13 @@ class FeedThread(private val subDir: String, private val operator: String, priva
       speed match {
         case "slow" => sleepInterval = 10000
           pause = false
-        case "normal" => sleepInterval = 1000
+        case "normal" => sleepInterval = 1500
           pause = false
         case "fast" => sleepInterval = 500
           pause = false
         case "pause" => pause = true
           Thread.sleep(5000)
-        case default => sleepInterval = 1500
+        case default => sleepInterval = 2500
           pause = false
       }
     }

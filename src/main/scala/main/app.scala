@@ -1,7 +1,10 @@
 package main
 
+import java.io.File
+
 import org.slf4j.LoggerFactory
-import utility.{Configuration, FeedThread, SystemMonitor}
+import utility.{Configuration, DBConnectionPool, FeedThread, SystemMonitor}
+
 
 /**
  * Created by Konstantin on 20/01/2015.
@@ -11,6 +14,36 @@ object app {
   private val logger = LoggerFactory.getLogger("APP")
 
   def main(args: Array[String]) {
+    if (args(0) == null || args(0) == None || args(0).length <= 0) {
+      logger.error("Missing arguments: Unspecified configuration file.")
+    }
+    DBConnectionPool.createPool(args(0))
+
+//    val host = "localhost"
+//    val port = 5432
+//    val db = "iBusDisruption"
+//    val user = "postgres"
+//    val password = "299188"
+//    DBConnectionPool.createPool(host, port, db, user, password)
+
+    for (i <- 0 until 10) {
+      val startTime = System.nanoTime
+      logger.debug("**************************************************{}**************************************************", i)
+      val connection = DBConnectionPool.getConnection()
+      val statement = connection.createStatement()
+      val resultSet = statement.executeQuery("SELECT key, value FROM \"EngineConfigurations\"")
+      while (resultSet.next()) {
+        val key = resultSet.getString("key")
+        val value = resultSet.getString("value")
+        logger.debug("Key => {} Value => {}", key, value)
+      }
+      logger.debug("Time {} nano seconds.", (System.nanoTime - startTime))
+      connection.close()
+    }
+
+
+    System.exit(0)
+
     if (args(0) == null || args(0) == None || args(0).length <= 0) {
       logger.error("Missing arguments: Unspecified configuration file.")
     }
@@ -53,7 +86,7 @@ object app {
     systemMonitor.start()
 
     //    val subDir = "February"
-//    val subDir = "Demo"
+    //    val subDir = "Demo"
     val subDir = "Demo Short"
     //    val subDir = "December"
     //SORTED largest to smallest

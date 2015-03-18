@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory
 import utility.{Configuration, CustomFilenameFilter}
 
 import scala.collection.JavaConversions._
+
 import scala.io.Source
 
 /**

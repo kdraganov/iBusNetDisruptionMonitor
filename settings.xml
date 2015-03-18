@@ -1,40 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-    <title>iBusNetDisruptionMonitor</title>
-    <mode>Dev</mode>
-    <!--Dev;Test;Prod-->
-    <feedsDir>E:\Workspace\iBusNetTestDirectory</feedsDir>
-    <processedDirectory>E:\Workspace\iBusNetTestDirectory\ProcessedFiles</processedDirectory>
-    <monitorThreadSleepInterval>2500</monitorThreadSleepInterval>
-    <!--In milliseconds-->
-    <busStopFile>
-        <path>E:\Workspace\iBusNetTestDirectory\busNetwork\bus-stops.csv</path>
-        <delimiter>,</delimiter>
-        <header>true</header>
-        <!-- 1-true, 0-false -->
-    </busStopFile>
-    <routesFile>
-        <path>E:\Workspace\iBusNetTestDirectory\busNetwork\bus-sequences.csv</path>
-        <delimiter>,</delimiter>
-        <header>true</header>
-    </routesFile>
-    <feedFile>
-        <nameStartWith>CC_</nameStartWith>
-        <nameEndWith>.csv</nameEndWith>
-        <delimiter>;</delimiter>
-        <header>true</header>
-        <!--Interval at which new feeds are pushed (in seconds)-->
-        <updateInterval>300</updateInterval>
-    </feedFile>
-    <dateFormat>yyyy/MM/dd HH:mm:ss</dateFormat>
-    <disruption timeUnit="minutes">
-        <!-- times in seconds -->
-        <sectionMediumThreshold>20</sectionMediumThreshold>
-        <sectionSeriousThreshold>40</sectionSeriousThreshold>
-        <sectionSevereThreshold>60</sectionSevereThreshold>
-        <routeSeriousThreshold>40</routeSeriousThreshold>
-        <routeSevereThreshold>60</routeSevereThreshold>
-        <maxSectionLength>9999</maxSectionLength>
-        <sectionMinThreshold>4</sectionMinThreshold>
-    </disruption>
-</configuration>
+<connection>
+    <host>localhost</host>
+    <port>5432</port>
+    <database>iBusDisruption</database>
+    <user>postgres</user>
+    <password>299188</password>
+    <maxPoolSize>5</maxPoolSize>
+</connection>
