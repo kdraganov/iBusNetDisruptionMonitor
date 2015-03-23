@@ -5,7 +5,12 @@ import java.util.{Calendar, Date}
 /**
  * Created by Konstantin on 04/02/2015.
  */
-class Disruption(var sectionStart: String, var sectionEnd: String, var delaySeconds: Double, private val timeFirstDetected: Date = Calendar.getInstance().getTime()) {
+class Disruption(private var sectionStartIndex: Integer,
+                 private var sectionEndIndex: Integer,
+                 private var sectionStart: String,
+                 private var sectionEnd: String,
+                 private var delaySeconds: Double,
+                 private val timeFirstDetected: Date = Calendar.getInstance().getTime()) {
 
   private var clearedAt: Date = null
   private var trend: Integer = Disruption.TrendWorsening
@@ -39,7 +44,11 @@ class Disruption(var sectionStart: String, var sectionEnd: String, var delaySeco
     clearedAt = date
   }
 
-  def update(newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double): Unit = {
+  def update(newSectionStartIndex: Integer, newSectionEndIndex: Integer, newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double): Unit = {
+    //TODO: Consider the section size for the trend as well
+    val oldSectionSize = this.sectionEndIndex - this.sectionStartIndex
+    this.sectionStartIndex = newSectionStartIndex
+    this.sectionEndIndex = newSectionEndIndex
     this.sectionStart = sectionStart
     this.sectionEnd = sectionEnd
     if (newDelaySeconds > delaySeconds) {
@@ -50,6 +59,24 @@ class Disruption(var sectionStart: String, var sectionEnd: String, var delaySeco
       trend = Disruption.TrendStable
     }
     delaySeconds = newDelaySeconds
+  }
+
+
+  def equals(that: Disruption): Boolean = {
+    if (this.sectionStartIndex == that.sectionStartIndex ||
+      this.sectionEndIndex == that.sectionEndIndex) {
+      return true
+    }
+    //    TODO:Extend this to capture all cases
+    return false
+  }
+
+  def clear(): Unit = {
+    //TODO: update in DB that this has cleared
+  }
+
+  def save(): Unit = {
+    //TODO: sava or update in DB
   }
 
 }

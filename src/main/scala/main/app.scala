@@ -1,9 +1,7 @@
 package main
 
-import java.io.File
-
 import org.slf4j.LoggerFactory
-import utility.{Configuration, DBConnectionPool, FeedThread, SystemMonitor}
+import utility._
 
 
 /**
@@ -18,42 +16,10 @@ object app {
       logger.error("Missing arguments: Unspecified configuration file.")
     }
     DBConnectionPool.createPool(args(0))
-
-//    val host = "localhost"
-//    val port = 5432
-//    val db = "iBusDisruption"
-//    val user = "postgres"
-//    val password = "299188"
-//    DBConnectionPool.createPool(host, port, db, user, password)
-
-    for (i <- 0 until 10) {
-      val startTime = System.nanoTime
-      logger.debug("**************************************************{}**************************************************", i)
-      val connection = DBConnectionPool.getConnection()
-      val statement = connection.createStatement()
-      val resultSet = statement.executeQuery("SELECT key, value FROM \"EngineConfigurations\"")
-      while (resultSet.next()) {
-        val key = resultSet.getString("key")
-        val value = resultSet.getString("value")
-        logger.debug("Key => {} Value => {}", key, value)
-      }
-      logger.debug("Time {} nano seconds.", (System.nanoTime - startTime))
-      connection.close()
-    }
-
+    Environment.init()
+    Environment.test()
 
     System.exit(0)
-
-    if (args(0) == null || args(0) == None || args(0).length <= 0) {
-      logger.error("Missing arguments: Unspecified configuration file.")
-    }
-    val configuration = Configuration
-    configuration.setConfigurationFilePath(args(0))
-    configuration.init()
-
-    //TODO:REMOVE
-    logger.debug("Loaded below settings:")
-    configuration.test()
 
     //    var buffer = new ArrayBuffer[Observation]()
     //    val list =  Array[String](

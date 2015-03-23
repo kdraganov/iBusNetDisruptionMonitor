@@ -2,6 +2,7 @@ package utility
 
 import java.io.File
 import java.nio.file.{FileSystems, Files, StandardCopyOption}
+import java.sql.{Connection, PreparedStatement, SQLException}
 
 import org.slf4j.LoggerFactory
 
@@ -64,29 +65,62 @@ class FeedThread(private val subDir: String, private val operator: String, priva
   }
 
   private def copy(file: File): Unit = {
-    //logger.trace("Copying file [{}] to {}.", file.getName, Configuration.getFeedsDirectory().getName)
+    logger.trace("Copying file [{}] to {}.", file.getName, Environment.getFeedDirectory().getName)
     val sourceFile = FileSystems.getDefault.getPath(file.getAbsolutePath)
-    val destinationFile = FileSystems.getDefault.getPath(Configuration.getFeedsDirectory().getAbsolutePath, file.getName)
+    val destinationFile = FileSystems.getDefault.getPath(Environment.getFeedDirectory().getAbsolutePath, file.getName)
     Files.copy(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)
   }
 
   private def speedControl(): Unit = {
     var pause = true
     while (pause) {
-      val speed = scala.io.Source.fromFile("E:\\Workspace\\iBusNetTestDirectory\\busNetwork\\speedControl.txt").mkString
-      speed match {
-        case "slow" => sleepInterval = 10000
-          pause = false
-        case "normal" => sleepInterval = 1500
-          pause = false
-        case "fast" => sleepInterval = 500
-          pause = false
-        case "pause" => pause = true
-          Thread.sleep(5000)
-        case default => sleepInterval = 2500
-          pause = false
+      var connection: Connection = null
+      var preparedStatement: PreparedStatement = null
+      val selectSQL = "SELECT * FROM \"EngineConfigurations\" WHERE key like 'feedThread%'"
+      try {
+        connection = DBConnectionPool.getConnection()
+        preparedStatement = connection.prepareStatement(selectSQL)
+        val rs = preparedStatement.executeQuery()
+        while (rs.next()) {
+          if (rs.getString("key") == "feedThreadPaused") {
+            pause = rs.getBoolean("value")
+          } else if (rs.getString("key") == "feedThreadSpeedInMilliSeconds") {
+            sleepInterval = rs.getLong("value")
+          }
+        }
+      }
+      catch {
+        case e: SQLException => logger.error("Exception:", e)
+      } finally {
+        if (preparedStatement != null) {
+          preparedStatement.close()
+        }
+        if (connection != null) {
+          DBConnectionPool.returnConnection(connection)
+        }
+      }
+
+      if (pause) {
+        Thread.sleep(5000)
       }
     }
+    //    var pause = true
+    //    while (pause) {
+    //      val speed = scala.io.Source.fromFile("E:\\Workspace\\iBusNetTestDirectory\\busNetwork\\speedControl.txt").mkString
+    //      speed match {
+    //        case "slow" => sleepInterval = 10000
+    //          pause = false
+    //        case "normal" => sleepInterval = 1500
+    //          pause = false
+    //        case "fast" => sleepInterval = 500
+    //          pause = false
+    //        case "pause" => pause = true
+    //          Thread.sleep(5000)
+    //        case default => sleepInterval = 2500
+    //          pause = false
+    //      }
+    //    }
 
   }
+
 }

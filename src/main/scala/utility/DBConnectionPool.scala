@@ -125,5 +125,8 @@ object DBConnectionPool {
     sourcePool.getConnection()
   }
 
+  def returnConnection(connection: Connection): Unit = {
+    connection.close()
+  }
 
 }

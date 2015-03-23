@@ -2,7 +2,7 @@ package lbsl
 
 import java.util.Date
 
-import utility.Configuration
+import utility.{Environment}
 
 /**
  * Created by Konstantin on 21/01/2015.
@@ -48,7 +48,7 @@ class Observation() extends Ordered[Observation] {
   }
 
   def init(feed: String, companyOperator: String): Boolean = {
-    val tokens: Array[String] = feed.split(Configuration.getFeedFileRegex)
+    val tokens: Array[String] = feed.split(Environment.getFeedFileRegex)
     scheduleDeviation = Integer.parseInt(tokens(Observation.ScheduleDeviation))
     tripType = Integer.parseInt(tokens(Observation.TripType))
 
@@ -61,7 +61,7 @@ class Observation() extends Ordered[Observation] {
     longitude = tokens(Observation.Longitude).toDouble
     latitude = tokens(Observation.Latitude).toDouble
     eventId = Integer.parseInt(tokens(Observation.EventId))
-    timeOfData = Configuration.getDateFormat().parse(tokens(Observation.TimeOfData))
+    timeOfData = Environment.getDateFormat().parse(tokens(Observation.TimeOfData))
     contractRoute = tokens(Observation.ContractRoute)
     lastStopShortDesc = tokens(Observation.LastStopShortDesc)
     operator = companyOperator

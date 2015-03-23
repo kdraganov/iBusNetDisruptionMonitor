@@ -5,10 +5,9 @@ import java.nio.file._
 
 import lbsl.{Network, Observation}
 import org.slf4j.LoggerFactory
-import utility.{Configuration, CustomFilenameFilter}
+import utility.{CustomFilenameFilter, Environment}
 
 import scala.collection.JavaConversions._
-
 import scala.io.Source
 
 /**
@@ -19,14 +18,14 @@ class iBusMonitor() extends Thread {
   private val busNetwork: Network = new Network
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private var updateNetwork: Boolean = false;
-  private val feedFilenameFilter: FilenameFilter = new CustomFilenameFilter(Configuration.getFeedFileStartWith, Configuration.getFeedFileEndWith)
+  private val feedFilenameFilter: FilenameFilter = new CustomFilenameFilter(Environment.getFeedFilePrefix, Environment.getFeedFileSuffix)
 
   override
   def run() {
     init()
 
     val watchService = FileSystems.getDefault.newWatchService()
-    Paths.get(Configuration.getFeedsDirectory().getAbsolutePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
+    Paths.get(Environment.getFeedDirectory().getAbsolutePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
 
     while (true) {
       val key = watchService.take()
@@ -36,9 +35,9 @@ class iBusMonitor() extends Thread {
         if (event_path != null) {
           val fileName = event_path.toString()
           if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
-            if (fileName.startsWith(Configuration.getFeedFileStartWith) && fileName.endsWith(Configuration.getFeedFileEndWith)) {
+            if (fileName.startsWith(Environment.getFeedFilePrefix) && fileName.endsWith(Environment.getFeedFileSuffix)) {
               logger.info("New file detected: {}", fileName)
-              processFile(new File(Configuration.getFeedsDirectory().getAbsolutePath + "\\" + fileName))
+              processFile(new File(Environment.getFeedDirectory().getAbsolutePath + "\\" + fileName))
             }
           }
         }
@@ -52,7 +51,7 @@ class iBusMonitor() extends Thread {
       }
 
       //check for any unprocessed files
-      for (file <- Configuration.getFeedsDirectory().listFiles(feedFilenameFilter) if file.isFile) {
+      for (file <- Environment.getFeedDirectory().listFiles(feedFilenameFilter) if file.isFile) {
         processFile(file)
       }
 
@@ -67,7 +66,7 @@ class iBusMonitor() extends Thread {
       }
 
       try {
-        Thread.sleep(Configuration.getMonitorThreadSleepInterval())
+        Thread.sleep(Environment.getMonitorThreadSleepInterval())
       } catch {
         case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
       }
@@ -94,7 +93,7 @@ class iBusMonitor() extends Thread {
   private def processFeed(file: File): Unit = {
     val source = Source.fromFile(file.getAbsolutePath)
     //Check whether to drop header
-    for (line <- source.getLines().drop(if (Configuration.getFeedFileHeader) 1 else 0)) {
+    for (line <- source.getLines().drop(if (Environment.getFeedFileHeader) 1 else 0)) {
       val observation = new Observation()
       if (observation.init(line, file.getName)) {
         busNetwork.addObservation(observation)
@@ -102,17 +101,17 @@ class iBusMonitor() extends Thread {
     }
     source.close
     val sourceFile = FileSystems.getDefault.getPath(file.getAbsolutePath)
-    val destinationFile = FileSystems.getDefault.getPath(Configuration.getProcessedDirectory().getAbsolutePath, file.getName)
+    val destinationFile = FileSystems.getDefault.getPath(Environment.getProcessedDirectory().getAbsolutePath, file.getName)
     Files.move(sourceFile, destinationFile, StandardCopyOption.REPLACE_EXISTING)
   }
 
   private def init(): Unit = {
-    logger.trace("Starting {} initialisation.", Configuration.getTitle())
+    logger.trace("Starting iBusMonitor initialisation.")
     logger.trace("****************************************************")
     busNetwork.init()
-    logger.trace("Finished {} initialisation.", Configuration.getTitle())
+    logger.trace("Finished iBusMonitor initialisation.")
     logger.trace("****************************************************")
-    logger.trace("Start monitoring folder [{}] for new file feeds.", Configuration.getFeedsDirectory().getAbsolutePath)
+    logger.trace("Start monitoring folder [{}] for new file feeds.", Environment.getFeedDirectory().getAbsolutePath)
   }
 
 }

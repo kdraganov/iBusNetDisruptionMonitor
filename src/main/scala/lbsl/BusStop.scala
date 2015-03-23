@@ -1,9 +1,16 @@
 package lbsl
 
+import java.sql.{Connection, PreparedStatement, SQLException}
+
+import org.slf4j.LoggerFactory
+import uk.me.jstott.jcoord.OSRef
+import utility.DBConnectionPool
+
 /**
  * Created by Konstantin on 26/01/2015.
  */
 class BusStop(
+               private val lbslCode: String,
                private val name: String,
                private val code: String,
                private val NaptanAtco: String,
@@ -21,17 +28,6 @@ class BusStop(
 
   def getLatitude(): Double = latitude
 
-//  def setName(name: String) {
-//    this.name = name
-//  }
-//
-//  def setLongitude(longitude: Double) {
-//    this.longitude = longitude
-//  }
-//
-//  def setLatitude(latitude: Double) {
-//    this.latitude = latitude
-//  }
 }
 
 object BusStop {
@@ -47,4 +43,33 @@ object BusStop {
   final val VirtualBusStop: Integer = 8
 
   final val NumberOfFields: Integer = 9
+
+  def getBusStop(lbslCode: String): BusStop = {
+    var busStop: BusStop = null
+    var connection: Connection = null
+    var preparedStatement: PreparedStatement = null
+    val selectSQL = "SELECT code, naptanAtcoCode, name, locationEasting, locationNorthing FROM \"BusStops\" WHERE lbslCode = ?"
+    try {
+      connection = DBConnectionPool.getConnection()
+      preparedStatement = connection.prepareStatement(selectSQL)
+      preparedStatement.setString(1, lbslCode)
+      val rs = preparedStatement.executeQuery()
+      if (rs.next()) {
+        val latLng = new OSRef(rs.getDouble("locationEasting"), rs.getDouble("locationNorthing")).toLatLng()
+        latLng.toWGS84()
+        busStop = new BusStop(lbslCode, rs.getString("name"), rs.getString("code"), rs.getString("naptanAtcoCode"), latLng.getLat, latLng.getLng)
+      }
+    }
+    catch {
+      case e: SQLException => LoggerFactory.getLogger(getClass().getSimpleName).error("Exception:", e)
+    } finally {
+      if (preparedStatement != null) {
+        preparedStatement.close()
+      }
+      if (connection != null) {
+        DBConnectionPool.returnConnection(connection)
+      }
+    }
+    return busStop
+  }
 }
