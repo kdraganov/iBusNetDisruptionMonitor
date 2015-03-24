@@ -1,14 +1,19 @@
 package lbsl
 
+import java.sql.{PreparedStatement, SQLException, Timestamp}
 import java.util.Date
+
+import org.slf4j.LoggerFactory
+import utility.Environment
 
 import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by Konstantin on 22/03/2015.
  */
-class Section(private val fromStop: String, private val toStop: String) {
+class Section(private val id: Integer, private val sequence: Integer, private val fromStop: String, private val toStop: String) {
 
+  private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private var delay: Double = 0
   private var update: Boolean = false
 
@@ -31,6 +36,26 @@ class Section(private val fromStop: String, private val toStop: String) {
     return delay
   }
 
+  def save(): Unit = {
+
+    var preparedStatement: PreparedStatement = null
+    val query = "INSERT INTO \"SectionsLostTime\" (\"sectionId\", \"lostTimeInSeconds\", \"timestamp\") VALUES (?, ?, ?);"
+    try {
+      preparedStatement = Network.connection.prepareStatement(query)
+      preparedStatement.setInt(1, id)
+      preparedStatement.setDouble(2, delay)
+      preparedStatement.setTimestamp(3, new Timestamp(Environment.getLatestFeedDateTime))
+      preparedStatement.executeUpdate()
+    } catch {
+      case e: SQLException => logger.error("Exception:", e)
+    } finally {
+      if (preparedStatement != null) {
+        preparedStatement.close()
+      }
+    }
+  }
+
+
   private def calculateDelay(): Unit = {
     observationList = observationList.sortBy(_._2)
     var weightedSum: Double = 0
@@ -40,10 +65,9 @@ class Section(private val fromStop: String, private val toStop: String) {
       totalWeight += weight
       weightedSum += observationList(i)._1 * weight
     }
+    delay = 0
     if (totalWeight > 0) {
       delay = weightedSum / totalWeight
-    } else {
-      delay = 0
     }
   }
 

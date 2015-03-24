@@ -3,7 +3,7 @@ package lbsl
 import java.sql.{Connection, PreparedStatement, SQLException}
 
 import org.slf4j.LoggerFactory
-import utility.{Environment, DBConnectionPool, MissingData}
+import utility.{DBConnectionPool, Environment, MissingData}
 
 import scala.collection.mutable
 
@@ -23,14 +23,16 @@ class Network {
   }
 
   private def calculateDisruptions(): Unit = {
+    Network.beginTransaction()
     for ((routeNumber, route) <- routeMap) {
       route.run()
     }
+    Network.commit()
   }
 
   /**
    *
-   *  code the bus stop LBSL code
+   * code the bus stop LBSL code
    * @return the bus stop if it exists,
    *         otherwise null
    */
@@ -66,9 +68,9 @@ class Network {
     }
     if (route != null) {
       val tempDate = observation.getTimeOfData
-            if (tempDate.getTime > Environment.getLatestFeedTime) {
-              Environment.setLatestFeedDateTime(tempDate)
-            }
+      if (tempDate.getTime > Environment.getLatestFeedTime) {
+        Environment.setLatestFeedDateTime(tempDate)
+      }
       route.addObservation(observation)
       return true
     }
@@ -202,4 +204,32 @@ class Network {
   //    }
   //    outputWriter.close()
   //  }
+}
+
+protected object Network {
+
+  var connection: Connection = null
+
+  def beginTransaction(): Unit = {
+    try {
+      connection = DBConnectionPool.getConnection()
+      connection.setAutoCommit(false)
+    } catch {
+      case e: SQLException => LoggerFactory.getLogger(getClass().getSimpleName).error("Exception:", e)
+    }
+  }
+
+  def commit(): Unit = {
+    try {
+      connection.commit();
+    } catch {
+      case e: SQLException => LoggerFactory.getLogger(getClass().getSimpleName).error("Exception:", e)
+        connection.rollback()
+    } finally {
+      if (connection != null) {
+        connection.close();
+      }
+    }
+    connection = null
+  }
 }

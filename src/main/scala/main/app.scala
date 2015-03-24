@@ -1,5 +1,8 @@
 package main
 
+import java.sql.{SQLException, Timestamp, PreparedStatement, Connection}
+import java.util.Date
+
 import org.slf4j.LoggerFactory
 import utility._
 
@@ -18,8 +21,6 @@ object app {
     DBConnectionPool.createPool(args(0))
     Environment.init()
     Environment.test()
-
-    System.exit(0)
 
     //    var buffer = new ArrayBuffer[Observation]()
     //    val list =  Array[String](

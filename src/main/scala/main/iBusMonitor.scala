@@ -7,8 +7,8 @@ import lbsl.{Network, Observation}
 import org.slf4j.LoggerFactory
 import utility.{CustomFilenameFilter, Environment}
 
-import scala.collection.JavaConversions._
-import scala.io.Source
+import collection.JavaConversions._
+import io.Source
 
 /**
  * Created by Konstantin on 20/01/2015.
@@ -80,7 +80,7 @@ class iBusMonitor() extends Thread {
         try {
           processFeed(file)
         } catch {
-          case e: FileNotFoundException => logger.error("Exception:", e)
+          case e: FileNotFoundException => //TODO: think of some workaround logger.error("Exception:", e)
           case e: Exception => logger.error("TERMINATING - iBusMonitorThread interrupted:", e)
             System.exit(-1)
         }

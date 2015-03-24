@@ -18,7 +18,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
 
   private val prevDisruptions: ArrayBuffer[Disruption] = new ArrayBuffer[Disruption]()
 
-  private var sections: Array[Section] = null
+  private var sections: ArrayBuffer[Section] = null
 
   def init(): Unit = {
     var connection: Connection = null
@@ -45,6 +45,10 @@ class Run(private val routeNumber: String, private val run: Integer) {
       }
     }
     generateSections()
+    //TODO: REMOVE - TEST
+    if (busStops.length - sections.length != 1) {
+      logger.debug("ERROORR: Number of bus stop {} and number of sections {}.", busStops.length, sections.length)
+    }
   }
 
   def detectDisruptions(): Unit = {
@@ -72,12 +76,14 @@ class Run(private val routeNumber: String, private val run: Integer) {
   }
 
   private def updateDB(): Unit = {
-    //TODO: save sections to DB as well
+    for (section <- sections) {
+      section.save()
+    }
     for (disruption <- prevDisruptions) {
       disruption.clear()
     }
     for (disruption <- disruptions) {
-      disruption.save()
+      disruption.save(routeNumber, run)
     }
   }
 
@@ -142,9 +148,29 @@ class Run(private val routeNumber: String, private val run: Integer) {
   }
 
   private def generateSections(): Unit = {
-    sections = new Array[Section](busStops.size - 1)
-    for (i <- 1 until busStops.size) {
-      sections(i - 1) = new Section(busStops(i - 1), busStops(i))
+    sections = new ArrayBuffer[Section]()
+    var connection: Connection = null
+    var preparedStatement: PreparedStatement = null
+    val query = "SELECT id, \"startStopLBSLCode\", \"endStopLBSLCode\", \"sequence\" FROM \"Sections\" WHERE route = ? AND run = ? ORDER BY \"sequence\""
+    try {
+      connection = DBConnectionPool.getConnection()
+      preparedStatement = connection.prepareStatement(query)
+      preparedStatement.setString(1, routeNumber)
+      preparedStatement.setInt(2, run)
+      val rs = preparedStatement.executeQuery()
+      while (rs.next()) {
+        sections.append(new Section(rs.getInt("id"), rs.getInt("sequence"), rs.getString("startStopLBSLCode"), rs.getString("endStopLBSLCode")))
+      }
+    }
+    catch {
+      case e: SQLException => logger.error("Exception:", e)
+    } finally {
+      if (preparedStatement != null) {
+        preparedStatement.close()
+      }
+      if (connection != null) {
+        DBConnectionPool.returnConnection(connection)
+      }
     }
   }
 }
