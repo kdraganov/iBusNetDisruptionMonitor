@@ -16,10 +16,15 @@ class Network {
   //  private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
 
+  private var maxExecutionTime: Double = 0
+
   def update(): Unit = {
     logger.info("BEGIN:Calculating disruptions...")
+    val start = System.nanoTime()
     calculateDisruptions()
-    logger.info("FINISH:Calculating disruptions")
+    val elapsedTime = (System.nanoTime() - start) / 1000000000.0
+    maxExecutionTime = Math.max(maxExecutionTime, elapsedTime)
+    logger.info("FINISH:Calculating disruptions. Calculation time {} seconds (Max calculation time {}).", elapsedTime, maxExecutionTime)
   }
 
   private def calculateDisruptions(): Unit = {
@@ -74,9 +79,7 @@ class Network {
       route.addObservation(observation)
       return true
     }
-
     MissingData.addMissingRoute(observation.getContractRoute, observation.getOperator)
-    //    logger.warn("Bus route [{}] missing from bus network.", observation.getContractRoute)
     return false
   }
 
@@ -209,6 +212,7 @@ class Network {
 protected object Network {
 
   var connection: Connection = null
+  val logger = LoggerFactory.getLogger(getClass().getSimpleName)
 
   def beginTransaction(): Unit = {
     try {
@@ -220,10 +224,23 @@ protected object Network {
   }
 
   def commit(): Unit = {
+    var preparedStatement: PreparedStatement = null
+    val query = "UPDATE \"EngineConfigurations\" SET \"value\" = ? WHERE key = 'latestFeedTime'"
     try {
-      connection.commit();
+      preparedStatement = connection.prepareStatement(query)
+      preparedStatement.setString(1, Environment.getDateFormat().format(Environment.getLatestFeedTime))
+      preparedStatement.executeUpdate()
     } catch {
-      case e: SQLException => LoggerFactory.getLogger(getClass().getSimpleName).error("Exception:", e)
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
+    } finally {
+      if (preparedStatement != null) {
+        preparedStatement.close()
+      }
+    }
+    try {
+      connection.commit()
+    } catch {
+      case e: SQLException => logger.error("Exception:", e)
         connection.rollback()
     } finally {
       if (connection != null) {

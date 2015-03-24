@@ -108,8 +108,10 @@ class iBusMonitor() extends Thread {
   private def init(): Unit = {
     logger.trace("Starting iBusMonitor initialisation.")
     logger.trace("****************************************************")
+    val start = System.nanoTime()
     busNetwork.init()
-    logger.trace("Finished iBusMonitor initialisation.")
+    val elapsedTime = System.nanoTime() - start
+    logger.trace("Finished iBusMonitor initialisation in {} seconds.", (elapsedTime / 1000000000.0))
     logger.trace("****************************************************")
     logger.trace("Start monitoring folder [{}] for new file feeds.", Environment.getFeedDirectory().getAbsolutePath)
   }

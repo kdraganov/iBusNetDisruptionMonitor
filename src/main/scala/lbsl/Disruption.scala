@@ -16,7 +16,7 @@ class Disruption(private var sectionStartIndex: Integer,
                  private var delaySeconds: Double,
                  private val timeFirstDetected: Date = Calendar.getInstance().getTime()) {
 
-  private var id: Integer = Disruption.getNextId()
+  private var id: Integer = null
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private var clearedAt: Date = null
   private var trend: Integer = Disruption.TrendWorsening
@@ -61,6 +61,8 @@ class Disruption(private var sectionStartIndex: Integer,
       trend = Disruption.TrendWorsening
     } else if (newDelaySeconds < delaySeconds) {
       trend = Disruption.TrendImproving
+    } else if (oldSectionSize < this.sectionEndIndex - this.sectionStartIndex) {
+      trend = Disruption.TrendWorsening
     } else {
       trend = Disruption.TrendStable
     }
@@ -77,12 +79,13 @@ class Disruption(private var sectionStartIndex: Integer,
     return false
   }
 
-  def clear(): Unit = {
+  def clear(date: Date): Unit = {
     var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"Disruptions\" SET \"clearedAt\" = now() WHERE id = ?"
+    val query = "UPDATE \"Disruptions\" SET \"clearedAt\" = ? WHERE id = ?"
     try {
-      preparedStatement =  Network.connection.prepareStatement(query)
-      preparedStatement.setInt(1, id)
+      preparedStatement = Network.connection.prepareStatement(query)
+      preparedStatement.setTimestamp(1, new Timestamp(date.getTime))
+      preparedStatement.setInt(2, id)
       preparedStatement.executeUpdate()
     }
     catch {
@@ -96,9 +99,9 @@ class Disruption(private var sectionStartIndex: Integer,
 
   def save(route: String, run: Integer): Unit = {
     if (id == null) {
+      id = Disruption.getNextId()
       newEntry(route, run)
     } else {
-      id = Disruption.getNextId()
       updateDBEntry()
     }
   }
@@ -116,7 +119,7 @@ class Disruption(private var sectionStartIndex: Integer,
       preparedStatement.executeUpdate()
     }
     catch {
-      case e: SQLException => logger.error("Exception:", e)
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
     } finally {
       if (preparedStatement != null) {
         preparedStatement.close()
@@ -140,7 +143,7 @@ class Disruption(private var sectionStartIndex: Integer,
       preparedStatement.executeUpdate()
     }
     catch {
-      case e: SQLException => logger.error("Exception:", e)
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
     } finally {
       if (preparedStatement != null) {
         preparedStatement.close()

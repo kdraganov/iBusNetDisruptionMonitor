@@ -41,7 +41,7 @@ object Environment {
 
   def getLatestFeedTime = latestFeedTime.getTime
 
-  def getLatestFeedDateTime = latestFeedTime.getTime
+//  def getLatestFeedDateTime = latestFeedTime.getTime
 
   def setLatestFeedDateTime(date: Date): Unit = {
         latestFeedTime = date

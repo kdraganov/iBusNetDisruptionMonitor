@@ -1,6 +1,7 @@
 package lbsl
 
 import java.sql.{Connection, PreparedStatement, SQLException}
+import java.util.Date
 
 import org.slf4j.LoggerFactory
 import utility.{DBConnectionPool, Environment}
@@ -19,6 +20,8 @@ class Run(private val routeNumber: String, private val run: Integer) {
   private val prevDisruptions: ArrayBuffer[Disruption] = new ArrayBuffer[Disruption]()
 
   private var sections: ArrayBuffer[Section] = null
+
+  private var latestObservationTime: Date = null
 
   def init(): Unit = {
     var connection: Connection = null
@@ -76,14 +79,25 @@ class Run(private val routeNumber: String, private val run: Integer) {
   }
 
   private def updateDB(): Unit = {
-    for (section <- sections) {
-      section.save()
+    if (!prevDisruptions.isEmpty) {
+      var clearedAt: Date = null
+      for (section <- sections if section.getLatestObservationTime() != null) {
+        if (clearedAt == null || section.getLatestObservationTime().after(clearedAt)) {
+          clearedAt = section.getLatestObservationTime()
+        }
+      }
+      for (disruption <- prevDisruptions) {
+        disruption.clear(clearedAt)
+      }
     }
-    for (disruption <- prevDisruptions) {
-      disruption.clear()
-    }
+
     for (disruption <- disruptions) {
       disruption.save(routeNumber, run)
+    }
+    if (!disruptions.isEmpty) {
+      for (section <- sections) {
+        section.save()
+      }
     }
   }
 
@@ -91,25 +105,28 @@ class Run(private val routeNumber: String, private val run: Integer) {
     var sectionStartStopIndex: Integer = null
     var disruptionSeconds: Double = 0
     for (i <- 0 until sections.length) {
+
       if (sections(i).getDelay() > sectionMinThreshold) {
         if (sectionStartStopIndex == null) {
           sectionStartStopIndex = i
         }
+        disruptionSeconds += sections(i).getDelay()
       } else {
         if (sectionStartStopIndex != null) {
           // end of sectionDisruption
           if (disruptionSeconds >= Environment.getSectionMediumThreshold) {
-            addDisruption(sectionStartStopIndex, i, disruptionSeconds)
+            addDisruption(sectionStartStopIndex, i, disruptionSeconds, sections(i-1).getLatestObservationTime())
           }
           sectionStartStopIndex = null
           disruptionSeconds = 0
         }
       }
+
     }
   }
 
-  private def addDisruption(sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double): Unit = {
-    var disruption = new Disruption(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds)
+  private def addDisruption(sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double, detectedAt: Date): Unit = {
+    var disruption = new Disruption(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, detectedAt)
     val index = prevDisruptions.indexWhere(disruption.equals(_))
     if (index > -1) {
       disruption = prevDisruptions.remove(index)
@@ -123,7 +140,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
     val lastStopIndex = busStops.indexOf(observation.getLastStopShortDesc)
     //TODO: Consider cases where the lastSTopIndex is the last stop from the given run
     if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex < busStops.size - 1) {
-      val numberOfSections = (prevLastStopIndex - lastStopIndex) + 1
+      val numberOfSections = (lastStopIndex - prevLastStopIndex) + 1
       val lostTimePerSection = lostTime / numberOfSections
       for (i <- prevLastStopIndex to lastStopIndex) {
         sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))

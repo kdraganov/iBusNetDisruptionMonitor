@@ -11,7 +11,7 @@ import scala.collection.mutable.{ArrayBuffer, Buffer}
 /**
  * Created by Konstantin on 17/02/2015.
  */
-class FeedThread(private val subDir: String, private val operator: String, private var sleepInterval: Long = 1500) extends Thread {
+class FeedThread(private val subDir: String, private val operator: String, private var sleepInterval: Long = 5000) extends Thread {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
 
@@ -30,9 +30,9 @@ class FeedThread(private val subDir: String, private val operator: String, priva
     for (buffer <- operatorBuffers) {
       logger.debug("{} feeds in buffer.", buffer.size)
     }
-    logger.debug("Sleeping for 5 seconds before starting")
+    logger.debug("Sleeping for 10 seconds before starting")
     try {
-      Thread.sleep(5000)
+      Thread.sleep(10000)
     } catch {
       case e: InterruptedException => logger.error("Feed thread interrupted:", e)
     }
@@ -104,23 +104,6 @@ class FeedThread(private val subDir: String, private val operator: String, priva
         Thread.sleep(5000)
       }
     }
-    //    var pause = true
-    //    while (pause) {
-    //      val speed = scala.io.Source.fromFile("E:\\Workspace\\iBusNetTestDirectory\\busNetwork\\speedControl.txt").mkString
-    //      speed match {
-    //        case "slow" => sleepInterval = 10000
-    //          pause = false
-    //        case "normal" => sleepInterval = 1500
-    //          pause = false
-    //        case "fast" => sleepInterval = 500
-    //          pause = false
-    //        case "pause" => pause = true
-    //          Thread.sleep(5000)
-    //        case default => sleepInterval = 2500
-    //          pause = false
-    //      }
-    //    }
-
   }
 
 }

@@ -32,7 +32,7 @@ class Route(private val contractRoute: String) extends Runnable {
       }
     }
     catch {
-      case e: SQLException => logger.error("Exception:", e)
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
     } finally {
       if (preparedStatement != null) {
         preparedStatement.close()
@@ -53,7 +53,7 @@ class Route(private val contractRoute: String) extends Runnable {
       run.clearSections()
     }
     for ((busId, observationList) <- busesOnRoute if observationList.size > 1) {
-      // logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.size())
+      //       logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.length)
       for (i <- 1 until observationList.size) {
         assignLostTimeToSections(observationList(i - 1), observationList(i))
       }
