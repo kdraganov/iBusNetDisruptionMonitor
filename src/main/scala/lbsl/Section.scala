@@ -44,12 +44,32 @@ class Section(private val id: Integer, private val sequence: Integer, private va
 
   def save(): Unit = {
     var preparedStatement: PreparedStatement = null
-    val query = "INSERT INTO \"SectionsLostTime\" (\"sectionId\", \"lostTimeInSeconds\", \"timestamp\") VALUES (?, ?, ?);"
+    val timestamp = new Timestamp(Environment.getLatestFeedTime)
+    val query = "INSERT INTO \"SectionsLostTime\" (\"sectionId\", \"lostTimeInSeconds\", \"timestamp\", \"numberOfObservations\") VALUES (?, ?, ?, ?);"
     try {
       preparedStatement = Network.connection.prepareStatement(query)
       preparedStatement.setInt(1, id)
       preparedStatement.setDouble(2, delay)
-      preparedStatement.setTimestamp(3, new Timestamp(Environment.getLatestFeedTime))
+      preparedStatement.setTimestamp(3, timestamp)
+      preparedStatement.setInt(4, observationList.size)
+      preparedStatement.executeUpdate()
+    } catch {
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
+    } finally {
+      if (preparedStatement != null) {
+        updateSections(timestamp)
+        preparedStatement.close()
+      }
+    }
+  }
+
+  private def updateSections(timestamp: Timestamp): Unit = {
+    var preparedStatement: PreparedStatement = null
+    val query = "UPDATE \"Sections\" SET \"latestLostTimeUpdateTime\" = ? WHERE \"id\" = ?;"
+    try {
+      preparedStatement = Network.connection.prepareStatement(query)
+      preparedStatement.setTimestamp(1, timestamp)
+      preparedStatement.setInt(2, id)
       preparedStatement.executeUpdate()
     } catch {
       case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
@@ -59,7 +79,6 @@ class Section(private val id: Integer, private val sequence: Integer, private va
       }
     }
   }
-
 
   private def calculateDelay(): Unit = {
     var weightedSum: Double = 0

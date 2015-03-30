@@ -103,7 +103,7 @@ class Route(private val contractRoute: String) extends Runnable {
       val sortedObservationList = observationList.sortBy(x => x.getTimeOfData)
       // difference in MILLISECONDS
       var timeDiff = Duration(Environment.getLatestFeedTime - sortedObservationList(0).getTimeOfData.getTime, MILLISECONDS)
-      while (timeDiff.toHours > Environment.getDataValidityTimeInHours && sortedObservationList.size > 0) {
+      while (timeDiff.toMinutes > Environment.getDataValidityTimeInMinutes && sortedObservationList.size > 0) {
         timeDiff = Duration(Environment.getLatestFeedTime - sortedObservationList.remove(0).getTimeOfData.getTime, MILLISECONDS)
       }
       if (sortedObservationList.isEmpty) {

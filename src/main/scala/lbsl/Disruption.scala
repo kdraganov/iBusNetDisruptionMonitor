@@ -14,6 +14,7 @@ class Disruption(private var sectionStartIndex: Integer,
                  private var sectionStart: String,
                  private var sectionEnd: String,
                  private var delaySeconds: Double,
+                 private var totalDelaySeconds: Double,
                  private val timeFirstDetected: Date = Calendar.getInstance().getTime()) {
 
   private var id: Integer = null
@@ -24,6 +25,14 @@ class Disruption(private var sectionStartIndex: Integer,
   def getSectionStartBusStop: String = sectionStart
 
   def getSectionEndBusStop: String = sectionEnd
+
+  def getTotalDelay: Integer = {
+    return totalDelaySeconds.toInt
+  }
+
+  def getTotalDelayInMinutes: Integer = {
+    return getTotalDelay / 60
+  }
 
   def getDelay: Integer = {
     return delaySeconds.toInt
@@ -50,13 +59,14 @@ class Disruption(private var sectionStartIndex: Integer,
     clearedAt = date
   }
 
-  def update(newSectionStartIndex: Integer, newSectionEndIndex: Integer, newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double): Unit = {
+  def update(newSectionStartIndex: Integer, newSectionEndIndex: Integer, newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double, newTotalDelaySeconds: Double): Unit = {
     //TODO: Consider the section size for the trend as well
     val oldSectionSize = this.sectionEndIndex - this.sectionStartIndex
     this.sectionStartIndex = newSectionStartIndex
     this.sectionEndIndex = newSectionEndIndex
-    this.sectionStart = sectionStart
-    this.sectionEnd = sectionEnd
+    this.sectionStart = newSectionStart
+    this.sectionEnd = newSectionEnd
+    this.totalDelaySeconds = newTotalDelaySeconds
     if (newDelaySeconds > delaySeconds) {
       trend = Disruption.TrendWorsening
     } else if (newDelaySeconds < delaySeconds) {
@@ -108,7 +118,7 @@ class Disruption(private var sectionStartIndex: Integer,
 
   private def updateDBEntry(): Unit = {
     var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"Disruptions\" SET \"fromStopLBSLCode\" = ?, \"toStopLBSLCode\" = ?, \"delayInSeconds\" = ?, trend = ? WHERE id = ?;"
+    val query = "UPDATE \"Disruptions\" SET \"fromStopLBSLCode\" = ?, \"toStopLBSLCode\" = ?, \"delayInSeconds\" = ?, trend = ?,  \"routeTotalDelayInSeconds\" = ? WHERE id = ?;"
     try {
       preparedStatement = Network.connection.prepareStatement(query)
       preparedStatement.setString(1, sectionStart)
@@ -116,6 +126,7 @@ class Disruption(private var sectionStartIndex: Integer,
       preparedStatement.setDouble(3, delaySeconds)
       preparedStatement.setInt(4, trend)
       preparedStatement.setInt(5, id)
+      preparedStatement.setDouble(6, totalDelaySeconds)
       preparedStatement.executeUpdate()
     }
     catch {
@@ -129,7 +140,7 @@ class Disruption(private var sectionStartIndex: Integer,
 
   private def newEntry(route: String, run: Integer): Unit = {
     var preparedStatement: PreparedStatement = null
-    val query = "INSERT INTO \"Disruptions\" (id, \"fromStopLBSLCode\", \"toStopLBSLCode\", route, run, \"delayInSeconds\", \"firstDetectedAt\", trend) VALUES (?, ?, ?, ?, ?, ?, ?, ?);"
+    val query = "INSERT INTO \"Disruptions\" (id, \"fromStopLBSLCode\", \"toStopLBSLCode\", route, run, \"delayInSeconds\", \"firstDetectedAt\", trend, \"routeTotalDelayInSeconds\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
     try {
       preparedStatement = Network.connection.prepareStatement(query)
       preparedStatement.setInt(1, id)
@@ -140,6 +151,7 @@ class Disruption(private var sectionStartIndex: Integer,
       preparedStatement.setDouble(6, delaySeconds)
       preparedStatement.setTimestamp(7, new Timestamp(timeFirstDetected.getTime))
       preparedStatement.setInt(8, trend)
+      preparedStatement.setDouble(9, totalDelaySeconds)
       preparedStatement.executeUpdate()
     }
     catch {

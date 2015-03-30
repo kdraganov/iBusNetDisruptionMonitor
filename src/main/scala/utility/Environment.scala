@@ -32,7 +32,7 @@ object Environment {
     "feedThreadSleepIntervalMilliSeconds",
     "monitorThreadSleepIntervalMilliSeconds",
     "processedDirectory",
-    "dataValidityTimeInHours")
+    "dataValidityTimeInMinutes")
 
   private var latestFeedTime: Date = new Date(0)
 
@@ -75,8 +75,8 @@ object Environment {
     return Integer.parseInt(getValue("feedThreadSleepIntervalMilliSeconds"))
   }
 
-  def getDataValidityTimeInHours: Integer = {
-    return Integer.parseInt(getValue("dataValidityTimeInHours"))
+  def getDataValidityTimeInMinutes: Integer = {
+    return Integer.parseInt(getValue("dataValidityTimeInMinutes"))
   }
 
   def getProcessedDirectory(): File = {
@@ -197,6 +197,6 @@ object Environment {
     logger.trace("RouteSevereThreshold - [{}]", getRouteSevereThreshold.toString)
     logger.trace("MaxSectionLength - [{}]", getMaxSectionLength.toString)
     logger.trace("SectionMinThreshold - [{}]", getSectionMinThreshold.toString)
-    logger.trace("Data validity in hours - [{}]", getDataValidityTimeInHours.toString)
+    logger.trace("Data validity in minutes - [{}]", getDataValidityTimeInMinutes.toString)
   }
 }

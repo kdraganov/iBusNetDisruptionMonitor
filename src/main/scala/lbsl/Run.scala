@@ -21,7 +21,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
 
   private var sections: ArrayBuffer[Section] = null
 
-  private var latestObservationTime: Date = null
+  //  private var latestObservationTime: Date = null
 
   def init(): Unit = {
     var connection: Connection = null
@@ -48,22 +48,30 @@ class Run(private val routeNumber: String, private val run: Integer) {
       }
     }
     generateSections()
-    //TODO: REMOVE - TEST
+
     if (busStops.length - sections.length != 1) {
-      logger.debug("ERROORR: Number of bus stop {} and number of sections {}.", busStops.length, sections.length)
+      logger.debug("ERROR: Number of bus stop {} and number of sections {}.", busStops.length, sections.length)
+      logger.debug("Terminating application.")
+      System.exit(1)
     }
   }
 
   def detectDisruptions(): Unit = {
     disruptions.copyToBuffer(prevDisruptions)
     disruptions.clear()
-    if (getTotalDelay() >= Environment.getSectionMediumThreshold) {
-      findDisruptedSections(Environment.getSectionMinThreshold)
+    val totalDelay = getTotalDelay()
+    if (totalDelay >= Environment.getSectionMediumThreshold) {
+      findDisruptedSections(Environment.getSectionMinThreshold, totalDelay)
+
       if (disruptions.isEmpty && getTotalDelay > Environment.getRouteSeriousThreshold) {
-        findDisruptedSections(Environment.getSectionMinThreshold / 2)
+        findDisruptedSections(Environment.getSectionMinThreshold / 2, totalDelay)
       }
-      //TODO: BEGIN Remove - just for testing purposes
       if (disruptions.isEmpty && getTotalDelay > Environment.getRouteSeriousThreshold) {
+        findDisruptedSections(90, totalDelay)
+      }
+
+      //TODO: BEGIN Remove - just for testing purposes
+      if (disruptions.isEmpty && totalDelay > Environment.getRouteSeriousThreshold) {
         var max: Double = 0
         for (section <- sections) {
           if (section.getDelay() > max) {
@@ -74,6 +82,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
           Array[Object](routeNumber, Run.getRunString(run), (getTotalDelay / 60).toString, max.toString))
       }
       //TODO: END
+
     }
     updateDB()
   }
@@ -101,7 +110,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-  private def findDisruptedSections(sectionMinThreshold: Integer): Unit = {
+  private def findDisruptedSections(sectionMinThreshold: Integer, totalDelay: Double): Unit = {
     var sectionStartStopIndex: Integer = null
     var disruptionSeconds: Double = 0
     for (i <- 0 until sections.length) {
@@ -115,7 +124,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
         if (sectionStartStopIndex != null) {
           // end of sectionDisruption
           if (disruptionSeconds >= Environment.getSectionMediumThreshold) {
-            addDisruption(sectionStartStopIndex, i, disruptionSeconds, sections(i-1).getLatestObservationTime())
+            addDisruption(sectionStartStopIndex, i, disruptionSeconds, totalDelay, sections(i - 1).getLatestObservationTime())
           }
           sectionStartStopIndex = null
           disruptionSeconds = 0
@@ -125,12 +134,12 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-  private def addDisruption(sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double, detectedAt: Date): Unit = {
-    var disruption = new Disruption(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, detectedAt)
+  private def addDisruption(sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double, totalDelaySeconds: Double, detectedAt: Date): Unit = {
+    var disruption = new Disruption(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, totalDelaySeconds, detectedAt)
     val index = prevDisruptions.indexWhere(disruption.equals(_))
     if (index > -1) {
       disruption = prevDisruptions.remove(index)
-      disruption.update(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds)
+      disruption.update(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, totalDelaySeconds)
     }
     disruptions.append(disruption)
   }

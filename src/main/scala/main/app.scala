@@ -1,8 +1,5 @@
 package main
 
-import java.sql.{SQLException, Timestamp, PreparedStatement, Connection}
-import java.util.Date
-
 import org.slf4j.LoggerFactory
 import utility._
 
@@ -54,14 +51,14 @@ object app {
 
     //    val subDir = "February"
     //    val subDir = "Demo"
-    val subDir = "Demo Short"
+    val subDir = "Demo"
     //    val subDir = "December"
     //SORTED largest to smallest
-    val operator = ""
+    //    val operator = ""
     //    val operator = "GOAHD"
     //    val operator = "MITRLNE"
     //    val operator = "ARRIVA"
-    //    val operator = "RATP"
+    val operator = "RATP"
     //    val operator = "ABELON"
     //    val operator = "TRTRN"
     //    val operator = "METROB"
