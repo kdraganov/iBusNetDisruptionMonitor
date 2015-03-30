@@ -13,9 +13,7 @@ import scala.collection.mutable
 class Network {
 
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-  //  private val busStopMap: mutable.HashMap[String, BusStop] = new mutable.HashMap[String, BusStop]()
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
-
   private var maxExecutionTime: Double = 0
 
   def update(): Unit = {
@@ -34,14 +32,6 @@ class Network {
     }
     Network.commit()
   }
-
-  /**
-   *
-   * code the bus stop LBSL code
-   * @return the bus stop if it exists,
-   *         otherwise null
-   */
-  //  def getBusStop(code: String): BusStop = busStopMap.getOrElse(code, null)
 
   /**
    *
@@ -88,28 +78,10 @@ class Network {
    * it loads the bus stops and bus routes
    */
   def init(): Unit = {
-    //    logger.info("BEGIN: Loading bus stops.")
-    //    loadBusStops()
-    //    logger.info("FINISH: Loaded {} bus stops.", busStopMap.size)
     logger.info("BEGIN: Loading bus routes.")
     loadRoutes()
     logger.info("FINISH: Loaded {} bus routes.", routeMap.size)
   }
-
-  //  private def loadBusStops(): Unit = {
-  //    val source = Source.fromFile(Configuration.getBusStopFile().getAbsolutePath)
-  //    //TODO: check whether to drop headers
-  //    for (line <- source.getLines().drop(1)) {
-  //      val tokens: Array[String] = line.split(Configuration.getBusStopFileRegex)
-  //      //TODO: This check should be more intelligent
-  //      if (tokens.length >= BusStop.NumberOfFields) {
-  //        val latLng = new OSRef(tokens(BusStop.LocationEasting).toDouble, tokens(BusStop.LocationNorthing).toDouble).toLatLng()
-  //        latLng.toWGS84()
-  //        busStopMap.put(tokens(BusStop.LBSLCode), new BusStop(tokens(BusStop.StopName), tokens(BusStop.Code), tokens(BusStop.NaptanAtco), latLng.getLat, latLng.getLng))
-  //      }
-  //    }
-  //    source.close
-  //  }
 
   private def loadRoutes(): Unit = {
     var connection: Connection = null
@@ -139,74 +111,6 @@ class Network {
     }
   }
 
-  //  private def loadRoutes(): Unit = {
-  //    val source = Source.fromFile(Configuration.getBusRouteFile.getAbsolutePath)
-  //    var routeKey: String = null
-  //    var route: Route = null
-  //    for (line <- source.getLines().drop(1)) {
-  //      val tokens: Array[String] = line.split(Configuration.getBusRouteFileRegex)
-  //      if (tokens.length >= Route.NumberOfFields) {
-  //        if (route == null) {
-  //          routeKey = tokens(Route.Route)
-  //          route = new Route(routeKey)
-  //        }
-  //        if (routeKey != tokens(Route.Route)) {
-  //          routeMap.put(routeKey, route)
-  //          routeKey = tokens(Route.Route)
-  //          route = new Route(routeKey)
-  //        }
-  //        val run = Integer.parseInt(tokens(Route.Run))
-  //        //For simplicity only consider the major outbound/inbound runs
-  //        if (run == 1) {
-  //          route.addBusStop(tokens(Route.StopCodeLBSL), Route.Outbound, Integer.parseInt(tokens(Route.Sequence)))
-  //        } else if (run == 2) {
-  //          route.addBusStop(tokens(Route.StopCodeLBSL), Route.Inbound, Integer.parseInt(tokens(Route.Sequence)))
-  //        }
-  //      }
-  //    }
-  //    if (routeKey != null && route != null) {
-  //      routeMap.put(routeKey, route)
-  //    }
-  //    source.close
-  //
-  //    for ((key, route) <- routeMap) {
-  //      route.generateSections()
-  //    }
-  //
-  //  }
-
-  //  private def calculateDisruptions(): Unit = {
-  //    val outputWriter = new OutputWriter()
-  //    for ((routeNumber, route) <- routeMap if route.isRouteActive()) {
-  //      route.run()
-  //      for (run: Integer <- Array[Integer](Route.Outbound, Route.Inbound) if route.hasDisruption(run)) {
-  //        val totalDisruptionTime = route.getTotalDisruptionTimeMinutes(run)
-  //        val direction = Route.getDirectionString(run)
-  //        for (disruption: Disruption <- route.getDisruptions(run)) {
-  //          val stopA = busStopMap.getOrElse(disruption.getSectionStartBusStop, null)
-  //          val stopB = busStopMap.getOrElse(disruption.getSectionEndBusStop, null)
-  //          if (stopA != null && stopB != null) {
-  //            outputWriter.write(routeNumber,
-  //              direction,
-  //              stopA,
-  //              stopB,
-  //              disruption.getDelayInMinutes,
-  //              totalDisruptionTime,
-  //              disruption.getTrend,
-  //              disruption.getTimeFirstDetected)
-  //          } else {
-  //            if (stopA == null) {
-  //              logger.debug("Cannot find stop {}", disruption.getSectionStartBusStop)
-  //            }
-  //            if (stopB == null) {
-  //              logger.debug("Cannot find stop {}", disruption.getSectionEndBusStop)
-  //            }
-  //          }
-  //        }
-  //      }
-  //    }
-  //    outputWriter.close()
-  //  }
 }
 
 protected object Network {
