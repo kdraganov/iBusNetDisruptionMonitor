@@ -30,6 +30,7 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   def clear(): Unit = {
     observationList.clear()
     update = true
+    delay = 0
   }
 
   def getDelay(): Double = {
