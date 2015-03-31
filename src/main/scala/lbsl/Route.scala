@@ -64,12 +64,9 @@ class Route(private val contractRoute: String) extends Runnable {
   }
 
   private def assignLostTimeToSections(prevObservation: Observation, observation: Observation): Boolean = {
-    val scheduleDeviationDifference = observation.getScheduleDeviation - prevObservation.getScheduleDeviation
-    if (scheduleDeviationDifference > 0) {
-      for (run <- runs) {
-        if (run.checkStops(prevObservation, observation, scheduleDeviationDifference)) {
-          return true
-        }
+    for (run <- runs) {
+      if (run.checkStops(prevObservation, observation)) {
+        return true
       }
     }
     return false

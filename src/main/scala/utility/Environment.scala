@@ -29,7 +29,6 @@ object Environment {
     "feedFileHeader",
     "feedFilePrefix",
     "feedFileSuffix",
-    "feedThreadSleepIntervalMilliSeconds",
     "monitorThreadSleepIntervalMilliSeconds",
     "processedDirectory",
     "dataValidityTimeInMinutes")
@@ -69,10 +68,6 @@ object Environment {
 
   def getFeedFileHeader: Boolean = {
     getValue("feedFileHeader").toBoolean
-  }
-
-  def getFeedThreadSleepIntervalMilliSeconds: Integer = {
-    return Integer.parseInt(getValue("feedThreadSleepIntervalMilliSeconds"))
   }
 
   def getDataValidityTimeInMinutes: Integer = {
@@ -189,7 +184,6 @@ object Environment {
     logger.trace("FeedFileDelimiter - [{}]", getFeedFileDelimiter)
     logger.trace("FeedFileHeader - [{}]", getFeedFileHeader.toString)
     logger.trace("FeedFileRegex - [{}]", getFeedFileRegex)
-    logger.trace("FeedThreadSleepIntervalMilliSeconds - [{}]", getFeedThreadSleepIntervalMilliSeconds.toString)
     logger.trace("SectionMediumThreshold - [{}]", getSectionMediumThreshold.toString)
     logger.trace("SectionSeriousThreshold - [{}]", getSectionSeriousThreshold.toString)
     logger.trace("SectionSevereThreshold - [{}]", getSectionSevereThreshold.toString)

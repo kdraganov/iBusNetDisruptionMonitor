@@ -57,21 +57,22 @@ class Run(private val routeNumber: String, private val run: Integer) {
   }
 
   def detectDisruptions(): Unit = {
+    prevDisruptions.clear()
     disruptions.copyToBuffer(prevDisruptions)
     disruptions.clear()
-    val totalDelay = getTotalDelay()
-    if (totalDelay >= Environment.getSectionMediumThreshold) {
-      findDisruptedSections(Environment.getSectionMinThreshold, totalDelay)
+    val cumulativeLostTime = getCumulativeLostTime()
+    if (cumulativeLostTime >= Environment.getSectionMediumThreshold) {
+      findDisruptedSections(Environment.getSectionMinThreshold, cumulativeLostTime)
 
-      if (disruptions.isEmpty && getTotalDelay > Environment.getRouteSeriousThreshold) {
-        findDisruptedSections(Environment.getSectionMinThreshold / 2, totalDelay)
+      if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
+        findDisruptedSections(Environment.getSectionMinThreshold / 2, cumulativeLostTime)
       }
-      if (disruptions.isEmpty && getTotalDelay > Environment.getRouteSeriousThreshold) {
-        findDisruptedSections(90, totalDelay)
+      if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
+        findDisruptedSections(90, cumulativeLostTime)
       }
 
       //TODO: BEGIN Remove - just for testing purposes
-      if (disruptions.isEmpty && totalDelay > Environment.getRouteSeriousThreshold) {
+      if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
         var max: Double = 0
         for (section <- sections) {
           if (section.getDelay() > max) {
@@ -79,7 +80,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
           }
         }
         logger.debug("Route {} direction {} disrupted by {} minutes [max section disruption is {}].",
-          Array[Object](routeNumber, Run.getRunString(run), (getTotalDelay / 60).toString, max.toString))
+          Array[Object](routeNumber, Run.getRunString(run), (cumulativeLostTime / 60).toString, max.toString))
       }
       //TODO: END
 
@@ -144,13 +145,13 @@ class Run(private val routeNumber: String, private val run: Integer) {
     disruptions.append(disruption)
   }
 
-  def checkStops(prevObservation: Observation, observation: Observation, lostTime: Double): Boolean = {
+  def checkStops(prevObservation: Observation, observation: Observation): Boolean = {
     val prevLastStopIndex = busStops.indexOf(prevObservation.getLastStopShortDesc)
     val lastStopIndex = busStops.indexOf(observation.getLastStopShortDesc)
     //TODO: Consider cases where the lastSTopIndex is the last stop from the given run
     if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex < busStops.size - 1) {
       val numberOfSections = (lastStopIndex - prevLastStopIndex) + 1
-      val lostTimePerSection = lostTime / numberOfSections
+      val lostTimePerSection = (observation.getScheduleDeviation - prevObservation.getScheduleDeviation) / numberOfSections
       for (i <- prevLastStopIndex to lastStopIndex) {
         sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
       }
@@ -165,10 +166,10 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-  def getTotalDelay(): Double = {
+  def getCumulativeLostTime(): Double = {
     var totalDelay: Double = 0
     for (section <- sections) {
-      totalDelay += section.getDelay()
+      totalDelay += Math.max(section.getDelay(), 0)
     }
     return totalDelay
   }

@@ -25,6 +25,10 @@ class Network {
     logger.info("FINISH:Calculating disruptions. Calculation time {} seconds (Max calculation time {}).", elapsedTime, maxExecutionTime)
   }
 
+  def getRouteCount(): Integer ={
+    return routeMap.size
+  }
+
   private def calculateDisruptions(): Unit = {
     Network.beginTransaction()
     for ((routeNumber, route) <- routeMap) {

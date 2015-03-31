@@ -81,13 +81,26 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   private def calculateDelay(): Unit = {
+    WMA()
+  }
+
+  private def calculateObservationValue(value: Double, weight: Double): Double = {
+    return value * weight
+  }
+
+  private def getWeight(itemIndex: Integer): Double = {
+    return itemIndex + 1
+  }
+
+  //Weighted moving average of the data
+  private def WMA(): Unit = {
     var weightedSum: Double = 0
     var totalWeight: Double = 0
     for (i <- 0 until observationList.length) {
       //      TODO: REMOVE  logger.debug("Observation index {}, time {} and time loss {}", Array[Object](i.toString, Environment.getDateFormat().format(observationList(i)._2), observationList(i)._1.toString))
       val weight = getWeight(i)
       totalWeight += weight
-      weightedSum += observationList(i)._1 * weight
+      weightedSum += calculateObservationValue(observationList(i)._1, weight)
     }
     //    TODO: REMOVE logger.debug("TotalWeight is {} and weightedSum is {}.", totalWeight, weightedSum)
     delay = 0
@@ -96,7 +109,17 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     }
   }
 
-  private def getWeight(itemOrder: Integer): Double = {
-    return itemOrder + 1
+  //Exponential moving averate
+  private def EMA(): Unit = {
+    var forecast = observationList(0)._1
+    for (i <- 1 until observationList.length) {
+      forecast = (Section.ALPHA * observationList(i)._1) + ((1 - Section.ALPHA) * forecast)
+    }
+    delay = forecast
   }
+
+}
+
+object Section {
+  private final val ALPHA = 0.85
 }

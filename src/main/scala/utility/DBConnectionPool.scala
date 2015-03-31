@@ -129,4 +129,8 @@ object DBConnectionPool {
     connection.close()
   }
 
+  def close(): Unit = {
+    sourcePool.close()
+
+  }
 }
