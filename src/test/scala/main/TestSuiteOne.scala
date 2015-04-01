@@ -1,4 +1,4 @@
-package scala.utility
+package scala.main
 
 import _root_.lbsl.{Network, Observation}
 import _root_.utility.{DBConnectionPool, Environment}

@@ -8,6 +8,7 @@ import java.util.Date
 import org.slf4j.LoggerFactory
 
 import scala.collection.mutable
+import scala.utility.DBTransaction
 
 /**
  * Created by Konstantin on 22/03/2015.
@@ -33,18 +34,18 @@ object Environment {
     "processedDirectory",
     "dataValidityTimeInMinutes")
 
-  private var latestFeedTime: Date = new Date(0)
-
+  private var latestFeedTimeOfData: Date = new Date(0)
   private val paramsMap = new mutable.HashMap[String, String]()
   private val quoteRegex: String = "(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"
+  private val dbTransaction: DBTransaction = new DBTransaction
 
-  def getLatestFeedTime = latestFeedTime.getTime
+  def getDBTransaction = dbTransaction
 
-//  def getLatestFeedDateTime = latestFeedTime.getTime
+  def getLatestFeedTimeOfData = latestFeedTimeOfData
 
-  def setLatestFeedDateTime(date: Date): Unit = {
-        latestFeedTime = date
-      }
+  def setLatestFeedTimeOfData(date: Date): Unit = {
+    latestFeedTimeOfData = date
+  }
 
   def getFeedDirectory(): File = {
     val feedDirectory = new File(getValue("feedDirectory"))

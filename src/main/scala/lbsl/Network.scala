@@ -25,16 +25,32 @@ class Network {
     logger.info("FINISH:Calculating disruptions. Calculation time {} seconds (Max calculation time {}).", elapsedTime, maxExecutionTime)
   }
 
-  def getRouteCount(): Integer ={
+  def getRouteCount(): Integer = {
     return routeMap.size
   }
 
   private def calculateDisruptions(): Unit = {
-    Network.beginTransaction()
+    Environment.getDBTransaction.begin()
     for ((routeNumber, route) <- routeMap) {
       route.run()
     }
-    Network.commit()
+
+    var preparedStatement: PreparedStatement = null
+    val query = "UPDATE \"EngineConfigurations\" SET \"value\" = ? WHERE key = 'latestFeedTime'"
+    try {
+      preparedStatement = Environment.getDBTransaction.getConnection.prepareStatement(query)
+      preparedStatement.setString(1, Environment.getDateFormat().format(Environment.getLatestFeedTimeOfData))
+      preparedStatement.executeUpdate()
+    } catch {
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
+        logger.error("Terminating application.")
+    } finally {
+      if (preparedStatement != null) {
+        preparedStatement.close()
+      }
+    }
+
+    Environment.getDBTransaction.commit()
   }
 
   /**
@@ -44,7 +60,6 @@ class Network {
    *         otherwise null
    */
   def getRoute(number: String): Route = routeMap.getOrElse(number, null)
-
 
   /**
    *
@@ -67,8 +82,8 @@ class Network {
     }
     if (route != null) {
       val tempDate = observation.getTimeOfData
-      if (tempDate.getTime > Environment.getLatestFeedTime) {
-        Environment.setLatestFeedDateTime(tempDate)
+      if (tempDate.getTime > Environment.getLatestFeedTimeOfData.getTime) {
+        Environment.setLatestFeedTimeOfData(tempDate)
       }
       route.addObservation(observation)
       return true
@@ -115,46 +130,4 @@ class Network {
     }
   }
 
-}
-
-protected object Network {
-
-  var connection: Connection = null
-  val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-
-  def beginTransaction(): Unit = {
-    try {
-      connection = DBConnectionPool.getConnection()
-      connection.setAutoCommit(false)
-    } catch {
-      case e: SQLException => LoggerFactory.getLogger(getClass().getSimpleName).error("Exception:", e)
-    }
-  }
-
-  def commit(): Unit = {
-    var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"EngineConfigurations\" SET \"value\" = ? WHERE key = 'latestFeedTime'"
-    try {
-      preparedStatement = connection.prepareStatement(query)
-      preparedStatement.setString(1, Environment.getDateFormat().format(Environment.getLatestFeedTime))
-      preparedStatement.executeUpdate()
-    } catch {
-      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
-    } finally {
-      if (preparedStatement != null) {
-        preparedStatement.close()
-      }
-    }
-    try {
-      connection.commit()
-    } catch {
-      case e: SQLException => logger.error("Exception:", e)
-        connection.rollback()
-    } finally {
-      if (connection != null) {
-        connection.close();
-      }
-    }
-    connection = null
-  }
 }

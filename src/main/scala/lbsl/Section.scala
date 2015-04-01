@@ -3,8 +3,8 @@ package lbsl
 import java.sql.{PreparedStatement, SQLException, Timestamp}
 import java.util.Date
 
+import _root_.utility.Environment
 import org.slf4j.LoggerFactory
-import utility.Environment
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -43,34 +43,16 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
 
-  def save(): Unit = {
+  def save(date: Date): Unit = {
+    val timestamp = new Timestamp(date.getTime)
     var preparedStatement: PreparedStatement = null
-    val timestamp = new Timestamp(Environment.getLatestFeedTime)
     val query = "INSERT INTO \"SectionsLostTime\" (\"sectionId\", \"lostTimeInSeconds\", \"timestamp\", \"numberOfObservations\") VALUES (?, ?, ?, ?);"
     try {
-      preparedStatement = Network.connection.prepareStatement(query)
+      preparedStatement = Environment.getDBTransaction.connection.prepareStatement(query)
       preparedStatement.setInt(1, id)
       preparedStatement.setDouble(2, delay)
       preparedStatement.setTimestamp(3, timestamp)
       preparedStatement.setInt(4, observationList.size)
-      preparedStatement.executeUpdate()
-    } catch {
-      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
-    } finally {
-      if (preparedStatement != null) {
-        updateSections(timestamp)
-        preparedStatement.close()
-      }
-    }
-  }
-
-  private def updateSections(timestamp: Timestamp): Unit = {
-    var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"Sections\" SET \"latestLostTimeUpdateTime\" = ? WHERE \"id\" = ?;"
-    try {
-      preparedStatement = Network.connection.prepareStatement(query)
-      preparedStatement.setTimestamp(1, timestamp)
-      preparedStatement.setInt(2, id)
       preparedStatement.executeUpdate()
     } catch {
       case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
@@ -82,7 +64,7 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   private def calculateDelay(): Unit = {
-    WMA()
+    EMA()
   }
 
   private def calculateObservationValue(value: Double, weight: Double): Double = {
@@ -110,7 +92,7 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     }
   }
 
-  //Exponential moving averate
+  //Exponential moving average
   private def EMA(): Unit = {
     var forecast = observationList(0)._1
     for (i <- 1 until observationList.length) {
@@ -122,5 +104,6 @@ class Section(private val id: Integer, private val sequence: Integer, private va
 }
 
 object Section {
-  private final val ALPHA = 0.85
+  private final val ALPHA = 0.5
+  private final val WMA_NUMBER_OF_OBSERVATIONS = 10
 }

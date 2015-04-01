@@ -1,10 +1,10 @@
 package lbsl
 
 import java.sql._
-import java.util.{Calendar, Date}
+import java.util.Date
 
+import _root_.utility.{DBConnectionPool, Environment}
 import org.slf4j.LoggerFactory
-import utility.DBConnectionPool
 
 /**
  * Created by Konstantin on 04/02/2015.
@@ -15,11 +15,10 @@ class Disruption(private var sectionStartIndex: Integer,
                  private var sectionEnd: String,
                  private var delaySeconds: Double,
                  private var totalDelaySeconds: Double,
-                 private val timeFirstDetected: Date = Calendar.getInstance().getTime()) {
+                 private val timeFirstDetected: Date) {
 
   private var id: Integer = null
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
-  private var clearedAt: Date = null
   private var trend: Integer = Disruption.TrendWorsening
 
   def getSectionStartBusStop: String = sectionStart
@@ -46,19 +45,6 @@ class Disruption(private var sectionStartIndex: Integer,
 
   def getTrend: Integer = trend
 
-  def isCleared: Boolean = {
-    if (clearedAt != null) {
-      return true
-    }
-    return false
-  }
-
-  def getClearedTime: Date = clearedAt
-
-  def setClearTime(date: Date): Unit = {
-    clearedAt = date
-  }
-
   def update(newSectionStartIndex: Integer, newSectionEndIndex: Integer, newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double, newTotalDelaySeconds: Double): Unit = {
     //TODO: Consider the section size for the trend as well
     val oldSectionSize = this.sectionEndIndex - this.sectionStartIndex
@@ -76,7 +62,7 @@ class Disruption(private var sectionStartIndex: Integer,
     } else {
       trend = Disruption.TrendStable
     }
-    delaySeconds = newDelaySeconds
+    this.delaySeconds = newDelaySeconds
   }
 
 
@@ -90,21 +76,7 @@ class Disruption(private var sectionStartIndex: Integer,
   }
 
   def clear(date: Date): Unit = {
-    var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"Disruptions\" SET \"clearedAt\" = ? WHERE id = ?"
-    try {
-      preparedStatement = Network.connection.prepareStatement(query)
-      preparedStatement.setTimestamp(1, new Timestamp(date.getTime))
-      preparedStatement.setInt(2, id)
-      preparedStatement.executeUpdate()
-    }
-    catch {
-      case e: SQLException => logger.error("Exception:", e)
-    } finally {
-      if (preparedStatement != null) {
-        preparedStatement.close()
-      }
-    }
+    updateDBEntry(date)
   }
 
   def save(route: String, run: Integer): Unit = {
@@ -116,17 +88,22 @@ class Disruption(private var sectionStartIndex: Integer,
     }
   }
 
-  private def updateDBEntry(): Unit = {
+  private def updateDBEntry(clearedAt: Date = null): Unit = {
     var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"Disruptions\" SET \"fromStopLBSLCode\" = ?, \"toStopLBSLCode\" = ?, \"delayInSeconds\" = ?, trend = ?,  \"routeTotalDelayInSeconds\" = ? WHERE id = ?;"
+    val query = "UPDATE \"Disruptions\" SET \"fromStopLBSLCode\" = ?, \"toStopLBSLCode\" = ?, \"delayInSeconds\" = ?, trend = ?,  \"routeTotalDelayInSeconds\" = ?, \"clearedAt\" = ? WHERE id = ? ;"
     try {
-      preparedStatement = Network.connection.prepareStatement(query)
+      preparedStatement = Environment.getDBTransaction.connection.prepareStatement(query)
       preparedStatement.setString(1, sectionStart)
       preparedStatement.setString(2, sectionEnd)
       preparedStatement.setDouble(3, delaySeconds)
       preparedStatement.setInt(4, trend)
-      preparedStatement.setInt(5, id)
-      preparedStatement.setDouble(6, totalDelaySeconds)
+      preparedStatement.setDouble(5, totalDelaySeconds)
+      if (clearedAt != null) {
+        preparedStatement.setTimestamp(6, new Timestamp(clearedAt.getTime))
+      } else {
+        preparedStatement.setNull(6, Types.NULL)
+      }
+      preparedStatement.setInt(7, id)
       preparedStatement.executeUpdate()
     }
     catch {
@@ -139,10 +116,13 @@ class Disruption(private var sectionStartIndex: Integer,
   }
 
   private def newEntry(route: String, run: Integer): Unit = {
+    if (delaySeconds > 2400) {
+      logger.debug("New disruption added with delay {}mins and total delay {}mins.", (delaySeconds / 60).toString, (totalDelaySeconds / 60)).toString)
+    }
     var preparedStatement: PreparedStatement = null
     val query = "INSERT INTO \"Disruptions\" (id, \"fromStopLBSLCode\", \"toStopLBSLCode\", route, run, \"delayInSeconds\", \"firstDetectedAt\", trend, \"routeTotalDelayInSeconds\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
     try {
-      preparedStatement = Network.connection.prepareStatement(query)
+      preparedStatement = Environment.getDBTransaction.connection.prepareStatement(query)
       preparedStatement.setInt(1, id)
       preparedStatement.setString(2, sectionStart)
       preparedStatement.setString(3, sectionEnd)

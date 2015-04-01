@@ -16,10 +16,8 @@ class Run(private val routeNumber: String, private val run: Integer) {
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private val busStops: ArrayBuffer[String] = new ArrayBuffer[String]()
   private val disruptions: ArrayBuffer[Disruption] = new ArrayBuffer[Disruption]()
-
   private val prevDisruptions: ArrayBuffer[Disruption] = new ArrayBuffer[Disruption]()
-
-  private var sections: ArrayBuffer[Section] = null
+  private val sections: ArrayBuffer[Section] = new ArrayBuffer[Section]()
 
   def init(): Unit = {
     var connection: Connection = null
@@ -46,7 +44,6 @@ class Run(private val routeNumber: String, private val run: Integer) {
       }
     }
     generateSections()
-
     if (busStops.length - sections.length != 1) {
       logger.debug("ERROR: Number of bus stop {} and number of sections {}.", busStops.length, sections.length)
       logger.debug("Terminating application.")
@@ -58,6 +55,35 @@ class Run(private val routeNumber: String, private val run: Integer) {
     prevDisruptions.clear()
     disruptions.copyToBuffer(prevDisruptions)
     disruptions.clear()
+    findDisruptions()
+    updateDB()
+  }
+
+  private def updateDB(): Unit = {
+    val latestObservationDate: Date = Environment.getLatestFeedTimeOfData
+    //    for (section <- sections if section.getLatestObservationTime() != null) {
+    //      if (latestObservationDate == null || section.getLatestObservationTime().after(latestObservationDate)) {
+    //        latestObservationDate = section.getLatestObservationTime()
+    //      }
+    //    }
+    if (!prevDisruptions.isEmpty) {
+      for (disruption <- prevDisruptions) {
+        disruption.clear(latestObservationDate)
+      }
+    }
+
+    if (!disruptions.isEmpty) {
+      for (section <- sections) {
+        section.save(latestObservationDate)
+      }
+    }
+
+    for (disruption <- disruptions) {
+      disruption.save(routeNumber, run)
+    }
+  }
+
+  private def findDisruptions(): Unit = {
     val cumulativeLostTime = getCumulativeLostTime()
     if (cumulativeLostTime >= Environment.getSectionMediumThreshold) {
       findDisruptedSections(Environment.getSectionMinThreshold)
@@ -65,6 +91,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
       if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
         findDisruptedSections(Environment.getSectionMinThreshold / 2)
       }
+
       if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
         findDisruptedSections(90)
       }
@@ -81,33 +108,9 @@ class Run(private val routeNumber: String, private val run: Integer) {
           Array[Object](routeNumber, Run.getRunString(run), (cumulativeLostTime / 60).toString, max.toString))
       }
       //TODO: END
-
-    }
-    updateDB()
-  }
-
-  private def updateDB(): Unit = {
-    if (!prevDisruptions.isEmpty) {
-      var clearedAt: Date = null
-      for (section <- sections if section.getLatestObservationTime() != null) {
-        if (clearedAt == null || section.getLatestObservationTime().after(clearedAt)) {
-          clearedAt = section.getLatestObservationTime()
-        }
-      }
-      for (disruption <- prevDisruptions) {
-        disruption.clear(clearedAt)
-      }
-    }
-
-    for (disruption <- disruptions) {
-      disruption.save(routeNumber, run)
-    }
-    if (!disruptions.isEmpty) {
-      for (section <- sections) {
-        section.save()
-      }
     }
   }
+
 
   private def findDisruptedSections(sectionMinThreshold: Integer): Unit = {
     var sectionStartStopIndex: Integer = null
@@ -123,7 +126,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
         if (sectionStartStopIndex != null) {
           // end of sectionDisruption
           if (disruptionSeconds >= Environment.getSectionMediumThreshold) {
-            addDisruption(sectionStartStopIndex, i, disruptionSeconds, sections(i - 1).getLatestObservationTime())
+            addDisruption(sectionStartStopIndex, i, disruptionSeconds)
           }
           sectionStartStopIndex = null
           disruptionSeconds = 0
@@ -133,24 +136,24 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-  private def addDisruption(sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double, detectedAt: Date): Unit = {
-    var disruption = new Disruption(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, getCumulativeLostTime(-9999999), detectedAt)
+  private def addDisruption(sectionStartStopIndex: Integer, sectionEndStopIndex: Integer, delaySeconds: Double): Unit = {
+    var disruption = new Disruption(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, getCumulativeLostTime(), Environment.getLatestFeedTimeOfData)
     val index = prevDisruptions.indexWhere(disruption.equals(_))
     if (index > -1) {
       disruption = prevDisruptions.remove(index)
-      disruption.update(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, getCumulativeLostTime(-9999999))
+      disruption.update(sectionStartStopIndex, sectionEndStopIndex, busStops(sectionStartStopIndex), busStops(sectionEndStopIndex), delaySeconds, getCumulativeLostTime())
     }
     disruptions.append(disruption)
   }
 
+  //TODO: Probably future work - consider when bus at end of run or is curtailed
   def checkStops(prevObservation: Observation, observation: Observation): Boolean = {
     val prevLastStopIndex = busStops.indexOf(prevObservation.getLastStopShortDesc)
     val lastStopIndex = busStops.indexOf(observation.getLastStopShortDesc)
-    //TODO: Consider cases where the lastSTopIndex is the last stop from the given run
-    if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex < busStops.size - 1) {
+    if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex <= busStops.size - 1) {
       val numberOfSections = (lastStopIndex - prevLastStopIndex) + 1
       val lostTimePerSection = (observation.getScheduleDeviation - prevObservation.getScheduleDeviation) / numberOfSections
-      for (i <- prevLastStopIndex to lastStopIndex) {
+      for (i <- prevLastStopIndex to Math.min(lastStopIndex, sections.size - 1)) {
         sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
       }
       return true
@@ -164,16 +167,19 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-  def getCumulativeLostTime(min: Double = 0): Double = {
+  def getCumulativeLostTime(considerNegatives: Boolean = false): Double = {
     var totalDelay: Double = 0
     for (section <- sections) {
-      totalDelay += Math.max(section.getDelay(), min)
+      if (considerNegatives) {
+        totalDelay += section.getDelay()
+      } else {
+        totalDelay += Math.max(section.getDelay(), 0)
+      }
     }
     return totalDelay
   }
 
   private def generateSections(): Unit = {
-    sections = new ArrayBuffer[Section]()
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
     val query = "SELECT id, \"startStopLBSLCode\", \"endStopLBSLCode\", \"sequence\" FROM \"Sections\" WHERE route = ? AND run = ? ORDER BY \"sequence\""
@@ -208,6 +214,5 @@ object Run {
       case 2 => return "Inbound"
       case default => return "Undefined"
     }
-
   }
 }

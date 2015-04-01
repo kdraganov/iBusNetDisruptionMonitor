@@ -23,7 +23,7 @@ object app {
   //    val operator = "CTPLUS"
   //    val operator = "SULLVN"
 
-  private val logger = LoggerFactory.getLogger("APP")
+  private val logger = LoggerFactory.getLogger("MainApp")
 
   def main(args: Array[String]) {
     if (args(0) == null || args(0) == None || args(0).length <= 0) {
