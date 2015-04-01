@@ -18,7 +18,6 @@ object Environment {
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private val expectedParams = Array[String](
     "dateFormat",
-    "disruptionMaxSectionLength",
     "disruptionRouteSeriousThresholdSeconds",
     "disruptionRouteSevereThresholdSeconds",
     "disruptionSectionMediumThresholdSeconds",
@@ -107,10 +106,6 @@ object Environment {
     return Integer.parseInt(getValue("disruptionSectionMinThresholdSeconds"))
   }
 
-  def getMaxSectionLength: Integer = {
-    return Integer.parseInt(getValue("disruptionMaxSectionLength"))
-  }
-
   def getRouteSevereThreshold: Integer = {
     return Integer.parseInt(getValue("disruptionRouteSevereThresholdSeconds"))
   }
@@ -190,7 +185,6 @@ object Environment {
     logger.trace("SectionSevereThreshold - [{}]", getSectionSevereThreshold.toString)
     logger.trace("RouteSeriousThreshold - [{}]", getRouteSeriousThreshold.toString)
     logger.trace("RouteSevereThreshold - [{}]", getRouteSevereThreshold.toString)
-    logger.trace("MaxSectionLength - [{}]", getMaxSectionLength.toString)
     logger.trace("SectionMinThreshold - [{}]", getSectionMinThreshold.toString)
     logger.trace("Data validity in minutes - [{}]", getDataValidityTimeInMinutes.toString)
   }

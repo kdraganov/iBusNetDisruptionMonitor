@@ -61,25 +61,19 @@ class Run(private val routeNumber: String, private val run: Integer) {
 
   private def updateDB(): Unit = {
     val latestObservationDate: Date = Environment.getLatestFeedTimeOfData
-    //    for (section <- sections if section.getLatestObservationTime() != null) {
-    //      if (latestObservationDate == null || section.getLatestObservationTime().after(latestObservationDate)) {
-    //        latestObservationDate = section.getLatestObservationTime()
-    //      }
-    //    }
-    if (!prevDisruptions.isEmpty) {
-      for (disruption <- prevDisruptions) {
-        disruption.clear(latestObservationDate)
-      }
-    }
-
-    if (!disruptions.isEmpty) {
-      for (section <- sections) {
-        section.save(latestObservationDate)
-      }
+    for (disruption <- prevDisruptions) {
+      disruption.update(getLostTime(disruption.getSectionStartIndex, disruption.getSectionEndIndex), getCumulativeLostTime())
+      disruption.clear(latestObservationDate)
     }
 
     for (disruption <- disruptions) {
       disruption.save(routeNumber, run)
+    }
+
+    if (!disruptions.isEmpty || !prevDisruptions.isEmpty) {
+      for (section <- sections) {
+        section.save(latestObservationDate)
+      }
     }
   }
 
@@ -167,7 +161,15 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-  def getCumulativeLostTime(considerNegatives: Boolean = false): Double = {
+  private def getLostTime(start: Int, end: Int): Double = {
+    var totalDelay: Double = 0
+    for (i <- start until end) {
+      totalDelay += Math.max(sections(i).getDelay(), 0)
+    }
+    return totalDelay
+  }
+
+  private def getCumulativeLostTime(considerNegatives: Boolean = false): Double = {
     var totalDelay: Double = 0
     for (section <- sections) {
       if (considerNegatives) {

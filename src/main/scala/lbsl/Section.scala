@@ -34,7 +34,7 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   def getDelay(): Double = {
-    if (update && observationList.size > 0) {
+    if (update && observationList.size > 1) {
       observationList = observationList.sortBy(_._2)
       latestObservationDate = observationList.last._2
       calculateDelay
@@ -64,15 +64,8 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   private def calculateDelay(): Unit = {
-    EMA()
-  }
-
-  private def calculateObservationValue(value: Double, weight: Double): Double = {
-    return value * weight
-  }
-
-  private def getWeight(itemIndex: Integer): Double = {
-    return itemIndex + 1
+    WMA()
+    //    EMA()
   }
 
   //Weighted moving average of the data
@@ -80,16 +73,22 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     var weightedSum: Double = 0
     var totalWeight: Double = 0
     for (i <- 0 until observationList.length) {
-      //      TODO: REMOVE  logger.debug("Observation index {}, time {} and time loss {}", Array[Object](i.toString, Environment.getDateFormat().format(observationList(i)._2), observationList(i)._1.toString))
       val weight = getWeight(i)
       totalWeight += weight
       weightedSum += calculateObservationValue(observationList(i)._1, weight)
     }
-    //    TODO: REMOVE logger.debug("TotalWeight is {} and weightedSum is {}.", totalWeight, weightedSum)
     delay = 0
     if (totalWeight > 0) {
       delay = weightedSum / totalWeight
     }
+  }
+
+  private def calculateObservationValue(value: Double, weight: Double): Double = {
+    return value * weight
+  }
+
+  private def getWeight(itemIndex: Integer): Double = {
+    return Math.pow(itemIndex + 1, 4) / 10000
   }
 
   //Exponential moving average
@@ -104,6 +103,5 @@ class Section(private val id: Integer, private val sequence: Integer, private va
 }
 
 object Section {
-  private final val ALPHA = 0.5
-  private final val WMA_NUMBER_OF_OBSERVATIONS = 10
+  private final val ALPHA = 0.65
 }

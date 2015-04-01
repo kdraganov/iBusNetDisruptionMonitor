@@ -21,6 +21,10 @@ class Disruption(private var sectionStartIndex: Integer,
   private val logger = LoggerFactory.getLogger(getClass().getSimpleName)
   private var trend: Integer = Disruption.TrendWorsening
 
+  def getSectionStartIndex: Integer = sectionStartIndex
+
+  def getSectionEndIndex: Integer = sectionEndIndex
+
   def getSectionStartBusStop: String = sectionStart
 
   def getSectionEndBusStop: String = sectionEnd
@@ -45,6 +49,10 @@ class Disruption(private var sectionStartIndex: Integer,
 
   def getTrend: Integer = trend
 
+  def update(newDelaySeconds: Double, newTotalDelaySeconds: Double): Unit = {
+    update(sectionStartIndex, sectionEndIndex, sectionStart, sectionEnd, newDelaySeconds, newTotalDelaySeconds)
+  }
+
   def update(newSectionStartIndex: Integer, newSectionEndIndex: Integer, newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double, newTotalDelaySeconds: Double): Unit = {
     //TODO: Consider the section size for the trend as well
     val oldSectionSize = this.sectionEndIndex - this.sectionStartIndex
@@ -65,13 +73,16 @@ class Disruption(private var sectionStartIndex: Integer,
     this.delaySeconds = newDelaySeconds
   }
 
-
+  //    TODO:Extend this to capture all cases
   def equals(that: Disruption): Boolean = {
     if (this.sectionStartIndex == that.sectionStartIndex ||
       this.sectionEndIndex == that.sectionEndIndex) {
       return true
+    } else if (this.sectionStartIndex >= that.sectionStartIndex && this.sectionStartIndex <= that.sectionEndIndex) {
+      return true
+    } else if (this.sectionEndIndex <= that.sectionEndIndex && this.sectionEndIndex >= that.sectionStartIndex) {
+      return true
     }
-    //    TODO:Extend this to capture all cases
     return false
   }
 
@@ -116,8 +127,8 @@ class Disruption(private var sectionStartIndex: Integer,
   }
 
   private def newEntry(route: String, run: Integer): Unit = {
-    if (delaySeconds > 2400) {
-      logger.debug("New disruption added with delay {}mins and total delay {}mins.", (delaySeconds / 60).toString, (totalDelaySeconds / 60)).toString)
+    if (delaySeconds > 2400 || totalDelaySeconds > 2400) {
+      logger.debug("New disruption added on route {} run {}with delay {}mins and total delay {}mins.", scala.Array[Object](route, run.toString, (delaySeconds / 60).toString, (totalDelaySeconds / 60).toString))
     }
     var preparedStatement: PreparedStatement = null
     val query = "INSERT INTO \"Disruptions\" (id, \"fromStopLBSLCode\", \"toStopLBSLCode\", route, run, \"delayInSeconds\", \"firstDetectedAt\", trend, \"routeTotalDelayInSeconds\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"
