@@ -12,6 +12,7 @@ class Observation() extends Ordered[Observation] {
   private var vehicleId: Integer = 0
   private var timeOfData: Date = null
   private var tripType: Integer = 0
+  private var tripId: Integer = 0
   private var contractRoute: String = null
   private var lastStopShortDesc: String = null
   private var scheduleDeviation: Integer = 0
@@ -25,6 +26,8 @@ class Observation() extends Ordered[Observation] {
   def getVehicleId: Integer = vehicleId
 
   def getTimeOfData: Date = timeOfData
+
+  def getTripId: Integer = tripId
 
   def getTripType: Integer = tripType
 
@@ -52,7 +55,7 @@ class Observation() extends Ordered[Observation] {
     scheduleDeviation = Integer.parseInt(tokens(Observation.ScheduleDeviation))
     tripType = Integer.parseInt(tokens(Observation.TripType))
 
-    //TODO: revise & improve this condition
+    //TODO: Diversions and Curtailments need to be considered
     if (scheduleDeviation == Observation.NegativeIntegerError || !lbsl.TripType.isActiveTrip(tripType)) {
       return false
     }
@@ -65,6 +68,7 @@ class Observation() extends Ordered[Observation] {
     contractRoute = tokens(Observation.ContractRoute)
     lastStopShortDesc = tokens(Observation.LastStopShortDesc)
     operator = companyOperator
+    tripId = Integer.parseInt(tokens(Observation.TripId))
     return true
   }
 

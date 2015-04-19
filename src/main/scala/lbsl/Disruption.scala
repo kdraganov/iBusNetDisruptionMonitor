@@ -128,7 +128,7 @@ class Disruption(private var sectionStartIndex: Integer,
 
   private def newEntry(route: String, run: Integer): Unit = {
     if (delaySeconds > 2400 || totalDelaySeconds > 2400) {
-      logger.debug("New disruption added on route {} run {}with delay {}mins and total delay {}mins.", scala.Array[Object](route, run.toString, (delaySeconds / 60).toString, (totalDelaySeconds / 60).toString))
+      logger.debug("New disruption added on route {} run {} with delay {}mins and total delay {}mins.", scala.Array[Object](route, run.toString, (delaySeconds / 60).toString, (totalDelaySeconds / 60).toString))
     }
     var preparedStatement: PreparedStatement = null
     val query = "INSERT INTO \"Disruptions\" (id, \"fromStopLBSLCode\", \"toStopLBSLCode\", route, run, \"delayInSeconds\", \"firstDetectedAt\", trend, \"routeTotalDelayInSeconds\") VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);"

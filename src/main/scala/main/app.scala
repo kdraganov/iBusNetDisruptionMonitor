@@ -1,6 +1,9 @@
 package main
 
+import java.io.FileNotFoundException
+
 import org.slf4j.LoggerFactory
+import org.xml.sax.SAXParseException
 import utility._
 
 /**
@@ -8,34 +11,40 @@ import utility._
  */
 object app {
 
-  //    val subDir = "February"
-  val subDir = "Demo"
-  //    val subDir = "December"
-  //SORTED largest to smallest
-  private val operator = ""
-  //    val operator = "GOAHD"
-  //    val operator = "MITRLNE"
-  //    val operator = "ARRIVA"
-  //    val operator = "RATP"
-  //    val operator = "ABELON"
-  //    val operator = "TRTRN"
-  //    val operator = "METROB"
-  //    val operator = "CTPLUS"
-  //    val operator = "SULLVN"
-
   private val logger = LoggerFactory.getLogger("MainApp")
 
   def main(args: Array[String]) {
-    if (args(0) == null || args(0) == None || args(0).length <= 0) {
+    if (args.isEmpty || (args(0) == null || args(0) == None || args(0).length <= 0)) {
       logger.error("Missing arguments: Unspecified configuration file.")
+      logger.error("Program will terminate!")
+      System.exit(-1)
     }
-    DBConnectionPool.createPool(args(0))
+    try {
+      DBConnectionPool.createPool(args(0))
+    } catch {
+      case e: FileNotFoundException =>
+        logger.info("Configuration file not found or cannot be accessed.")
+        logger.error("Exception:", e)
+        logger.info("Program will terminate!")
+        System.exit(-1)
+      case e: NumberFormatException =>
+        logger.info("Incorrect connection settings.")
+        logger.error("Exception:", e)
+        logger.info("Program will terminate!")
+        System.exit(-1)
+      case e: SAXParseException =>
+        logger.info("Incorrect connection settings.")
+        logger.error("Exception:", e)
+        logger.info("Program will terminate!")
+        System.exit(-1)
+    }
     Environment.init()
     Environment.test()
 
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start()
 
+    //This is used for performance measurement
     val systemMonitor = new SystemMonitor()
     systemMonitor.start()
     try {
@@ -44,8 +53,6 @@ object app {
       case e: InterruptedException => logger.error("Thread interrupted:", e)
     }
 
-    val feedThread = new FeedThread(subDir, operator)
-    feedThread.start()
   }
 
 }

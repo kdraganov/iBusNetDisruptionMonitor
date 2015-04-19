@@ -65,17 +65,22 @@ class Section(private val id: Integer, private val sequence: Integer, private va
 
   private def calculateDelay(): Unit = {
     WMA()
-    //    EMA()
+    //    doubleExponentialSmoothing()
   }
 
   //Weighted moving average of the data
-  private def WMA(): Unit = {
+  private def WMA(windowSize: Integer = 5): Unit = {
     var weightedSum: Double = 0
     var totalWeight: Double = 0
+    //if (observationList.length > windowSize) {
+    observationList.remove(0, Math.max(observationList.length - windowSize, 0))
+    //}
+
+    //val startIndex = Math.max(observationList.length - windowSize, 0)
     for (i <- 0 until observationList.length) {
       val weight = getWeight(i)
       totalWeight += weight
-      weightedSum += calculateObservationValue(observationList(i)._1, weight)
+      weightedSum += Math.max(observationList(i)._1 * weight, 0)
     }
     delay = 0
     if (totalWeight > 0) {
@@ -83,16 +88,13 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     }
   }
 
-  private def calculateObservationValue(value: Double, weight: Double): Double = {
-    return value * weight
-  }
-
   private def getWeight(itemIndex: Integer): Double = {
-    return Math.pow(itemIndex + 1, 4) / 10000
+    return itemIndex + 1
+    //    return Math.pow(2, itemIndex + 1)
   }
 
   //Exponential moving average
-  private def EMA(): Unit = {
+  private def singleExponentialSmoothing(): Unit = {
     var forecast = observationList(0)._1
     for (i <- 1 until observationList.length) {
       forecast = (Section.ALPHA * observationList(i)._1) + ((1 - Section.ALPHA) * forecast)
@@ -100,6 +102,21 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     delay = forecast
   }
 
+  private def doubleExponentialSmoothing(): Unit = {
+    val alpha = 0.6
+    val beta = 0.8
+    var prevConstant = observationList(0)._1
+    var prevTrend = observationList(0)._1
+    for (i <- 1 until observationList.length) {
+      val constant = alpha * observationList(i)._1 + (1 - alpha) * (prevConstant + prevTrend)
+      prevTrend = beta * (constant - prevConstant) + (1 - beta) * prevTrend
+      prevConstant = constant
+    }
+    delay = prevConstant + prevTrend
+    //    val smoothedConstant = alpha*currentVal + (1 - alpha) *(prevSmoothedConstant + prevSmoothedTrend)
+    //    val smoothedTrend = beta*(smoothedConstant - prevSmoothedConstant) + (1 - beta)*prevSmoothedTrend
+    //    val forecast = smoothedConstant + smoothedTrend
+  }
 }
 
 object Section {

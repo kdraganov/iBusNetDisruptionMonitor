@@ -142,16 +142,19 @@ class Run(private val routeNumber: String, private val run: Integer) {
 
   //TODO: Probably future work - consider when bus at end of run or is curtailed
   def checkStops(prevObservation: Observation, observation: Observation): Boolean = {
-    val prevLastStopIndex = busStops.indexOf(prevObservation.getLastStopShortDesc)
-    val lastStopIndex = busStops.indexOf(observation.getLastStopShortDesc)
-    if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex <= busStops.size - 1) {
-      val numberOfSections = (lastStopIndex - prevLastStopIndex) + 1
-      val lostTimePerSection = (observation.getScheduleDeviation - prevObservation.getScheduleDeviation) / numberOfSections
-      for (i <- prevLastStopIndex to Math.min(lastStopIndex, sections.size - 1)) {
-        sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
+    //This controls whether to include or exclude curtailments (in case when included we assume that the lost time has happened on previous trip)
+    //if (prevObservation.getTripId == observation.getTripId) {
+      val prevLastStopIndex = busStops.indexOf(prevObservation.getLastStopShortDesc)
+      val lastStopIndex = busStops.indexOf(observation.getLastStopShortDesc)
+      if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex <= busStops.size - 1) {
+        val numberOfSections = (lastStopIndex - prevLastStopIndex) + 1
+        val lostTimePerSection = (observation.getScheduleDeviation - prevObservation.getScheduleDeviation) / numberOfSections
+        for (i <- prevLastStopIndex to Math.min(lastStopIndex, sections.size - 1)) {
+          sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
+        }
+        return true
       }
-      return true
-    }
+    //}
     return false
   }
 

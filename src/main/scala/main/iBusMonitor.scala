@@ -36,7 +36,7 @@ class iBusMonitor() extends Thread {
           val fileName = event_path.toString()
           if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
             if (fileName.startsWith(Environment.getFeedFilePrefix) && fileName.endsWith(Environment.getFeedFileSuffix)) {
-              logger.info("New file detected: {}", fileName)
+//              logger.info("New file detected: {}", fileName)
               processFile(new File(Environment.getFeedDirectory().getAbsolutePath + "\\" + fileName))
             }
           }
@@ -75,7 +75,7 @@ class iBusMonitor() extends Thread {
 
   private def processFile(file: File): Unit = {
     if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
-      logger.info("Processing file [{}].", file.getAbsolutePath)
+//      logger.info("Processing file [{}].", file.getAbsolutePath)
       while (file.exists()) {
         try {
           processFeed(file)
