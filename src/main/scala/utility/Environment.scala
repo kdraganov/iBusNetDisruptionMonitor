@@ -31,12 +31,21 @@ object Environment {
     "feedFileSuffix",
     "monitorThreadSleepIntervalMilliSeconds",
     "processedDirectory",
-    "dataValidityTimeInMinutes")
+    "dataValidityTimeInMinutes",
+    "movingAverageWindowSize",
+    "systemMonitor"
+  )
 
   private var latestFeedTimeOfData: Date = new Date(0)
   private val paramsMap = new mutable.HashMap[String, String]()
   private val quoteRegex: String = "(?=([^\\\"]*\\\"[^\\\"]*\\\")*[^\\\"]*$)"
   private val dbTransaction: DBTransaction = new DBTransaction
+
+  def isSystemMonitorActive(): Boolean = getValue("systemMonitor").toBoolean
+
+  def getMovingAverageWindowSize(): Integer = {
+    return Integer.parseInt(getValue("movingAverageWindowSize"))
+  }
 
   def getDBTransaction = dbTransaction
 
@@ -187,5 +196,7 @@ object Environment {
     logger.trace("RouteSevereThreshold - [{}]", getRouteSevereThreshold.toString)
     logger.trace("SectionMinThreshold - [{}]", getSectionMinThreshold.toString)
     logger.trace("Data validity in minutes - [{}]", getDataValidityTimeInMinutes.toString)
+    logger.trace("Moving Average Window Size - [{}]", getMovingAverageWindowSize.toString)
+    logger.trace("System Monitor - [{}]", isSystemMonitorActive.toString)
   }
 }

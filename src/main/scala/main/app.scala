@@ -45,14 +45,10 @@ object app {
     iBusMonitor.start()
 
     //This is used for performance measurement
-    val systemMonitor = new SystemMonitor()
-    systemMonitor.start()
-    try {
-      Thread.sleep(10000)
-    } catch {
-      case e: InterruptedException => logger.error("Thread interrupted:", e)
+    if (Environment.isSystemMonitorActive()) {
+      val systemMonitor = new SystemMonitor()
+      systemMonitor.start()
     }
-
   }
 
 }

@@ -69,14 +69,10 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   //Weighted moving average of the data
-  private def WMA(windowSize: Integer = 5): Unit = {
+  private def WMA(windowSize: Integer = Environment.getMovingAverageWindowSize()): Unit = {
     var weightedSum: Double = 0
     var totalWeight: Double = 0
-    //if (observationList.length > windowSize) {
     observationList.remove(0, Math.max(observationList.length - windowSize, 0))
-    //}
-
-    //val startIndex = Math.max(observationList.length - windowSize, 0)
     for (i <- 0 until observationList.length) {
       val weight = getWeight(i)
       totalWeight += weight
