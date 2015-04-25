@@ -78,9 +78,11 @@ class Disruption(private var sectionStartIndex: Integer,
     if (this.sectionStartIndex == that.sectionStartIndex ||
       this.sectionEndIndex == that.sectionEndIndex) {
       return true
-    } else if (this.sectionStartIndex >= that.sectionStartIndex && this.sectionStartIndex <= that.sectionEndIndex) {
+    } else if ((this.sectionStartIndex >= that.sectionStartIndex && this.sectionStartIndex <= that.sectionEndIndex) ||
+      (that.sectionStartIndex >= this.sectionStartIndex && that.sectionStartIndex <= this.sectionEndIndex)) {
       return true
-    } else if (this.sectionEndIndex <= that.sectionEndIndex && this.sectionEndIndex >= that.sectionStartIndex) {
+    } else if ((this.sectionEndIndex <= that.sectionEndIndex && this.sectionEndIndex >= that.sectionStartIndex) ||
+      (that.sectionEndIndex <= this.sectionEndIndex && that.sectionEndIndex >= this.sectionStartIndex)) {
       return true
     }
     return false

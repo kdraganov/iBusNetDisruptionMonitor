@@ -20,7 +20,10 @@ class Section(private val id: Integer, private val sequence: Integer, private va
 
   private var observationList: ArrayBuffer[Tuple2[Double, Date]] = new ArrayBuffer[Tuple2[Double, Date]]()
 
-  def getLatestObservationTime(): Date = latestObservationDate
+  def getLatestObservationTime(): Date = {
+    isUptodate
+    latestObservationDate
+  }
 
   def addObservation(observation: Tuple2[Double, Date]): Unit = {
     observationList.append(observation)
@@ -34,12 +37,26 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   def getDelay(): Double = {
+    if (!isUptodate) {
+      calculateDelay
+    }
+    //    if (update && observationList.size > 1) {
+    //      observationList = observationList.sortBy(_._2)
+    //      latestObservationDate = observationList.last._2
+    //      calculateDelay
+    //    }
+    return delay
+  }
+
+  private def isUptodate(): Boolean = {
     if (update && observationList.size > 1) {
       observationList = observationList.sortBy(_._2)
       latestObservationDate = observationList.last._2
-      calculateDelay
+      return false
+    } else {
+      latestObservationDate = null
     }
-    return delay
+    return true
   }
 
 

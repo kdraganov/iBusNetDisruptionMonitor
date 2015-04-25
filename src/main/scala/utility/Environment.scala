@@ -178,7 +178,6 @@ object Environment {
     }
   }
 
-
   def test(): Unit = {
     logger.trace("MonitorThreadSleepInterval - [{}]", getMonitorThreadSleepInterval().toString)
     logger.trace("FeedsDirectory - [{}]", getFeedDirectory().getAbsolutePath)

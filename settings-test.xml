@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<connection>
+    <host>localhost</host>
+    <port>5432</port>
+    <database>iBusDisruption</database>
+    <user>postgres</user>
+    <password>299188</password>
+    <maxPoolSize>5</maxPoolSize>
+</connection>

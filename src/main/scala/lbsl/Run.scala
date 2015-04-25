@@ -143,7 +143,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
   //TODO: Probably future work - consider when bus at end of run or is curtailed
   def checkStops(prevObservation: Observation, observation: Observation): Boolean = {
     //This controls whether to include or exclude curtailments (in case when included we assume that the lost time has happened on previous trip)
-    //if (prevObservation.getTripId == observation.getTripId) {
+    if (prevObservation.getTripId == observation.getTripId || (prevObservation.getTripType == 3 && observation.getTripType == 2)) {
       val prevLastStopIndex = busStops.indexOf(prevObservation.getLastStopShortDesc)
       val lastStopIndex = busStops.indexOf(observation.getLastStopShortDesc)
       if (lastStopIndex >= prevLastStopIndex && prevLastStopIndex > -1 && lastStopIndex <= busStops.size - 1) {
@@ -154,7 +154,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
         }
         return true
       }
-    //}
+    }
     return false
   }
 

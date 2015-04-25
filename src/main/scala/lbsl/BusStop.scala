@@ -18,6 +18,8 @@ class BusStop(
                private val longitude: Double) {
 
 
+  def getLBSLCode(): String = lbslCode
+
   def getName(): String = name
 
   def getNaptanAtco(): String = NaptanAtco
@@ -48,7 +50,7 @@ object BusStop {
     var busStop: BusStop = null
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
-    val selectSQL = "SELECT code, naptanAtcoCode, name, locationEasting, locationNorthing FROM \"BusStops\" WHERE lbslCode = ?"
+    val selectSQL = "SELECT code, \"naptanAtcoCode\", name, \"locationEasting\", \"locationNorthing\" FROM \"BusStops\" WHERE \"lbslCode\" = ?"
     try {
       connection = DBConnectionPool.getConnection()
       preparedStatement = connection.prepareStatement(selectSQL)

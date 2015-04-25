@@ -22,7 +22,7 @@ object TripType extends Enumeration {
   val NotLogged = 7
 
   def isActiveTrip(tripType: Integer): Boolean = {
-    if (tripType == 3) {
+    if (tripType == 3 || tripType == 2) {
       return true
     }
     return false
