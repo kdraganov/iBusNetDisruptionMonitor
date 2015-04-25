@@ -12,6 +12,9 @@ import scala.utility.DBTransaction
 
 /**
  * Created by Konstantin on 22/03/2015.
+ *
+ * Static class representing the Environment variables
+ * and configurations. Which are all loaded from the database.
  */
 object Environment {
 

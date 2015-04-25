@@ -9,6 +9,8 @@ import scala.collection.mutable
 
 /**
  * Created by Konstantin
+ *
+ * This class represents a bus network.
  */
 class Network {
 
@@ -16,6 +18,9 @@ class Network {
   private val routeMap: mutable.HashMap[String, Route] = new mutable.HashMap[String, Route]()
   private var maxExecutionTime: Double = 0
 
+  /**
+   * Method which updates the bus network state.
+   */
   def update(): Unit = {
     logger.info("BEGIN:Calculating disruptions...")
     val start = System.nanoTime()
@@ -29,30 +34,6 @@ class Network {
     return routeMap.size
   }
 
-  private def calculateDisruptions(): Unit = {
-    Environment.getDBTransaction.begin()
-    for ((routeNumber, route) <- routeMap) {
-      route.run()
-    }
-
-    var preparedStatement: PreparedStatement = null
-    val query = "UPDATE \"EngineConfigurations\" SET \"value\" = ? WHERE key = 'latestFeedTime'"
-    try {
-      preparedStatement = Environment.getDBTransaction.getConnection.prepareStatement(query)
-      preparedStatement.setString(1, Environment.getDateFormat().format(Environment.getLatestFeedTimeOfData))
-      preparedStatement.executeUpdate()
-    } catch {
-      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
-        logger.error("Terminating application.")
-    } finally {
-      if (preparedStatement != null) {
-        preparedStatement.close()
-      }
-    }
-
-    Environment.getDBTransaction.commit()
-  }
-
   /**
    *
    * @param number the bus route number
@@ -63,20 +44,13 @@ class Network {
 
   /**
    *
-   * @param observation bservation to be added to network
+   * @param observation Observation to be added to network
    * @return true if bus route exists and observation has been added successfully,
    *         otherwise false
    */
   def addObservation(observation: Observation): Boolean = {
-    //check if last stop is recognised
-    //    if (busStopMap.getOrElse(observation.getLastStopShortDesc, null) == null) {
-    //      //bus stop is missing no point of adding it
-    //      MissingData.addMissingStop(observation.getLastStopShortDesc, observation.getContractRoute, observation.getOperator)
-    //      return false
-    //    }
-
     var route = routeMap.getOrElse(observation.getContractRoute, null)
-    //check if it a 24h service bus
+    //Check if it is a 24h service bus
     if (route == null && observation.getContractRoute.startsWith("N")) {
       route = routeMap.getOrElse(observation.getContractRoute.substring(1), null)
     }
@@ -102,6 +76,28 @@ class Network {
     logger.info("FINISH: Loaded {} bus routes.", routeMap.size)
   }
 
+  private def calculateDisruptions(): Unit = {
+    Environment.getDBTransaction.begin()
+    for ((routeNumber, route) <- routeMap) {
+      route.run()
+    }
+    var preparedStatement: PreparedStatement = null
+    val query = "UPDATE \"EngineConfigurations\" SET \"value\" = ? WHERE key = 'latestFeedTime'"
+    try {
+      preparedStatement = Environment.getDBTransaction.getConnection.prepareStatement(query)
+      preparedStatement.setString(1, Environment.getDateFormat().format(Environment.getLatestFeedTimeOfData))
+      preparedStatement.executeUpdate()
+    } catch {
+      case e: SQLException => logger.error("Exception: with query ({}) ", preparedStatement.toString, e)
+        logger.error("Terminating application.")
+    } finally {
+      if (preparedStatement != null) {
+        preparedStatement.close()
+      }
+    }
+    Environment.getDBTransaction.commit()
+  }
+
   private def loadRoutes(): Unit = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
@@ -124,7 +120,7 @@ class Network {
         DBConnectionPool.returnConnection(connection)
       }
     }
-    //TODO: concurrent execution could be introduced here
+    //TODO: Concurrent execution could be introduced here
     for ((routeNumber, route) <- routeMap) {
       route.init()
     }

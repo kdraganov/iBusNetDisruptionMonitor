@@ -7,11 +7,15 @@ import lbsl.{Network, Observation}
 import org.slf4j.LoggerFactory
 import utility.{CustomFilenameFilter, Environment}
 
-import collection.JavaConversions._
-import io.Source
+import scala.collection.JavaConversions._
+import scala.io.Source
 
 /**
  * Created by Konstantin on 20/01/2015.
+ * Class which extends Thread and provides monitoring
+ * functionality. It is responsible for monitoring a predefined
+ * directory for new feed files.
+ *
  */
 class iBusMonitor() extends Thread {
 
@@ -20,13 +24,19 @@ class iBusMonitor() extends Thread {
   private var updateNetwork: Boolean = false;
   private val feedFilenameFilter: FilenameFilter = new CustomFilenameFilter(Environment.getFeedFilePrefix, Environment.getFeedFileSuffix)
 
+  /**
+   * The run method of this class is expected to run continuously.
+   * It listens for new files being created/updated in a predefine
+   * directory. Once it detects a new file it checks if the file
+   * is following the expected naming conventions and format. If
+   * all holds the files is processed by extracting the observations.
+   * After processing the file is moved to processed feed files directory.
+   */
   override
   def run() {
     init()
-
     val watchService = FileSystems.getDefault.newWatchService()
     Paths.get(Environment.getFeedDirectory().getAbsolutePath).register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY)
-
     while (true) {
       val key = watchService.take()
       val events = key.pollEvents()
@@ -36,7 +46,7 @@ class iBusMonitor() extends Thread {
           val fileName = event_path.toString()
           if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
             if (fileName.startsWith(Environment.getFeedFilePrefix) && fileName.endsWith(Environment.getFeedFileSuffix)) {
-//              logger.info("New file detected: {}", fileName)
+              //              logger.info("New file detected: {}", fileName)
               processFile(new File(Environment.getFeedDirectory().getAbsolutePath + "\\" + fileName))
             }
           }
@@ -50,11 +60,11 @@ class iBusMonitor() extends Thread {
         case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
       }
 
-      //check for any unprocessed files
+      //checks for any unprocessed files
       for (file <- Environment.getFeedDirectory().listFiles(feedFilenameFilter) if file.isFile) {
         processFile(file)
       }
-
+      //Only update network if valid observations have been processed
       if (updateNetwork) {
         try {
           busNetwork.update()
@@ -75,12 +85,12 @@ class iBusMonitor() extends Thread {
 
   private def processFile(file: File): Unit = {
     if (file.isFile && file.exists() && file.canRead() && file.canExecute) {
-//      logger.info("Processing file [{}].", file.getAbsolutePath)
+      logger.info("Processing file [{}].", file.getAbsolutePath)
       while (file.exists()) {
         try {
           processFeed(file)
         } catch {
-          case e: FileNotFoundException => //TODO: think of some workaround logger.error("Exception:", e)
+          case e: FileNotFoundException => logger.warn("Exception:", e)
           case e: Exception => logger.error("TERMINATING - iBusMonitorThread interrupted:", e)
             System.exit(-1)
         }

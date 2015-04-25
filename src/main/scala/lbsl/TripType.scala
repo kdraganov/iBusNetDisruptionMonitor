@@ -21,6 +21,11 @@ object TripType extends Enumeration {
   val RouteVariant = 6
   val NotLogged = 7
 
+  /**
+   *
+   * @param tripType Integer - the trip type to be checked if is active one
+   * @return Boolean - true if the provided trip type is active, false otherwise
+   */
   def isActiveTrip(tripType: Integer): Boolean = {
     if (tripType == 3 || tripType == 2) {
       return true

@@ -10,6 +10,8 @@ import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by Konstantin on 17/02/2015.
+ *
+ * Used for simulation, however it has been moved as a separate application.
  */
 class FeedThread(private val subDir: String, private val operator: String, private var sleepInterval: Long = 5000) extends Thread {
 

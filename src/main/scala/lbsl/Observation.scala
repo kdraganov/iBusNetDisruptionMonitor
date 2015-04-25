@@ -2,10 +2,15 @@ package lbsl
 
 import java.util.Date
 
-import utility.{Environment}
+import utility.Environment
 
 /**
  * Created by Konstantin on 21/01/2015.
+ *
+ * Class representing an observation of the
+ * bus for a given point in time. It is based
+ * on the data from the feed files which in turn
+ * are based on the transmitted AVL data.
  */
 class Observation() extends Ordered[Observation] {
 
@@ -43,6 +48,11 @@ class Observation() extends Ordered[Observation] {
 
   def getEventId: Integer = eventId
 
+  /**
+   *
+   * @return Boolean - true if the observation has valid
+   *         values for the parameters, false otherwise
+   */
   def isValid: Boolean = {
     if (scheduleDeviation == Observation.NegativeIntegerError) {
       return false
@@ -50,12 +60,18 @@ class Observation() extends Ordered[Observation] {
     return true
   }
 
+  /**
+   *
+   * @param feed String - the line representing the observation in the feed file.
+   * @param companyOperator String - the bus operator company
+   * @return Boolean - true if the observation is valid, meaning it can
+   *         be used by the system, otherwise false
+   */
   def init(feed: String, companyOperator: String): Boolean = {
     val tokens: Array[String] = feed.split(Environment.getFeedFileRegex)
     scheduleDeviation = Integer.parseInt(tokens(Observation.ScheduleDeviation))
     tripType = Integer.parseInt(tokens(Observation.TripType))
 
-    //TODO: Diversions and Curtailments need to be considered
     if (scheduleDeviation == Observation.NegativeIntegerError || !lbsl.TripType.isActiveTrip(tripType)) {
       return false
     }

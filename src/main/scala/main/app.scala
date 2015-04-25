@@ -8,6 +8,11 @@ import utility._
 
 /**
  * Created by Konstantin on 20/01/2015.
+ *
+ * Main object which acts as the entry point of the system.
+ * The system expects a single to be provided with a single argument
+ * which is the path to the XML file containing the details for connecting
+ * to the database
  */
 object app {
 
@@ -19,6 +24,7 @@ object app {
       logger.error("Program will terminate!")
       System.exit(-1)
     }
+
     try {
       DBConnectionPool.createPool(args(0))
     } catch {
@@ -39,7 +45,7 @@ object app {
         System.exit(-1)
     }
     Environment.init()
-    Environment.test()
+//    Environment.test()
 
     val iBusMonitor = new iBusMonitor()
     iBusMonitor.start()

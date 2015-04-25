@@ -9,6 +9,9 @@ import org.slf4j.LoggerFactory
 
 /**
  * Created by Konstantin on 10/03/2015.
+ *
+ * Class used for writing the output of the system to CSV files.
+ * This however has become obsolete as the system has moved to use a database.
  */
 class OutputWriter {
 

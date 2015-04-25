@@ -10,6 +10,8 @@ import scala.concurrent.duration._
 
 /**
  * Created by Konstantin on 26/01/2015.
+ *
+ * Class representing a route in the bus network.
  */
 
 class Route(private val contractRoute: String) extends Runnable {
@@ -30,12 +32,21 @@ class Route(private val contractRoute: String) extends Runnable {
     !busesOnRoute.isEmpty
   }
 
+  /**
+   *
+   * @param observation Observation - to be added to the route
+   */
   def addObservation(observation: Observation): Unit = {
     val observationList = busesOnRoute.getOrElse(observation.getVehicleId, new ArrayBuffer[Observation]())
     observationList.append(observation)
     busesOnRoute.put(observation.getVehicleId, observationList)
   }
 
+  /**
+   * Method for initialisation of the route. This includes
+   * the preload of all the information for the route and its
+   * runs and sections from the database.
+   */
   def init(): Unit = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
@@ -68,7 +79,6 @@ class Route(private val contractRoute: String) extends Runnable {
   def run(): Unit = {
     updateObservations()
     for ((busId, observationList) <- busesOnRoute if observationList.size > 1) {
-      //       logger.trace("Route {} observation list size = {} ", getContractRoute, observationList.length)
       for (i <- 1 until observationList.size) {
         assignLostTimeToSections(observationList(i - 1), observationList(i))
       }
@@ -76,7 +86,6 @@ class Route(private val contractRoute: String) extends Runnable {
     for (run <- runList) {
       run.detectDisruptions()
     }
-    //TODO:Consider moving this after section is saved
     for (run <- runList) {
       run.clearSections()
     }
@@ -88,7 +97,7 @@ class Route(private val contractRoute: String) extends Runnable {
         return true
       }
     }
-    //TODO: FOR TESTING PURPOSES - logs unassigned observation differences
+    //Used for testing only - logs unassigned observation differences
     //    logger.debug("Unassigned observations prevLastStop {} [Route {} - {}] and lastStop {} [Route {} - {}].",
     //      Array[Object](prevObservation.getLastStopShortDesc, prevObservation.getContractRoute, prevObservation.getOperator,
     //        observation.getLastStopShortDesc, prevObservation.getContractRoute, observation.getOperator))

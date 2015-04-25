@@ -10,6 +10,8 @@ import scala.collection.mutable.ArrayBuffer
 
 /**
  * Created by Konstantin on 22/03/2015.
+ *
+ * Class representing a single run on a given route.
  */
 class Run(private val routeNumber: String, private val run: Integer) {
 
@@ -140,7 +142,12 @@ class Run(private val routeNumber: String, private val run: Integer) {
     disruptions.append(disruption)
   }
 
-  //TODO: Probably future work - consider when bus at end of run or is curtailed
+  /**
+   *
+   * @param prevObservation Observation - the previous observation
+   * @param observation Observation - the subsequent observation
+   * @return Boolean - tru if the observation are made from the same run of a given route
+   */
   def checkStops(prevObservation: Observation, observation: Observation): Boolean = {
     //This controls whether to include or exclude curtailments (in case when included we assume that the lost time has happened on previous trip)
     if (prevObservation.getTripId == observation.getTripId || (prevObservation.getTripType == 3 && observation.getTripType == 2)) {
@@ -151,7 +158,7 @@ class Run(private val routeNumber: String, private val run: Integer) {
         val lostTimePerSection = (observation.getScheduleDeviation - prevObservation.getScheduleDeviation) / numberOfSections
         for (i <- prevLastStopIndex to Math.min(lastStopIndex, sections.size - 1)) {
           sections(i).addObservation(observation.getVehicleId, lostTimePerSection, observation.getTimeOfData)
-//          sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
+          //          sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
         }
         return true
       }
@@ -213,7 +220,11 @@ class Run(private val routeNumber: String, private val run: Integer) {
 }
 
 object Run {
-
+  /**
+   * Static method which returns the string for a run
+   * @param run Integer - the intger representing the run type
+   * @return String - the string for the provided run
+   */
   def getRunString(run: Int): String = {
     run match {
       case 1 => return "Outbound"

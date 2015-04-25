@@ -4,6 +4,10 @@ import org.slf4j.LoggerFactory
 
 /**
  * Created by Konstantin on 10/02/2015.
+ *
+ * Class used for gathering memory usage information,
+ * throughout the execution of the system. Used for
+ * stress testing measurements.
  */
 class SystemMonitor extends Thread {
 

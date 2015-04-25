@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory
 
 /**
  * Created by Konstantin on 04/02/2015.
+ *
+ * Class which represent a disruption in the bus network.
  */
 class Disruption(private var sectionStartIndex: Integer,
                  private var sectionEndIndex: Integer,
@@ -29,32 +31,71 @@ class Disruption(private var sectionStartIndex: Integer,
 
   def getSectionEndBusStop: String = sectionEnd
 
+  /**
+   *
+   * @return Integer - representing the total
+   *         cumulative delay along a route run in seconds
+   */
   def getTotalDelay: Integer = {
     return totalDelaySeconds.toInt
   }
 
+  /**
+   *
+   * @return Integer - representing the total
+   *         cumulative delay along a route run in minutes
+   */
   def getTotalDelayInMinutes: Integer = {
     return getTotalDelay / 60
   }
 
+  /**
+   *
+   * @return Integer - representing the delay in seconds
+   */
   def getDelay: Integer = {
     return delaySeconds.toInt
   }
 
+  /**
+   *
+   * @return Integer - representing the delay in minutes.
+   */
   def getDelayInMinutes: Integer = {
     return getDelay / 60
   }
 
+  /**
+   *
+   * @return Date - the time when the disruption was first detected
+   */
   def getTimeFirstDetected: Date = timeFirstDetected
 
+  /**
+   *
+   * @return Integer - representing the trend direction of the disruption
+   */
   def getTrend: Integer = trend
 
+  /**
+   * Method which updates the disruption parameters.
+   * @param newDelaySeconds
+   * @param newTotalDelaySeconds
+   */
   def update(newDelaySeconds: Double, newTotalDelaySeconds: Double): Unit = {
     update(sectionStartIndex, sectionEndIndex, sectionStart, sectionEnd, newDelaySeconds, newTotalDelaySeconds)
   }
 
+  /**
+   * Method which updates the disruption parameters.
+   * @param newSectionStartIndex
+   * @param newSectionEndIndex
+   * @param newSectionStart
+   * @param newSectionEnd
+   * @param newDelaySeconds
+   * @param newTotalDelaySeconds
+   */
   def update(newSectionStartIndex: Integer, newSectionEndIndex: Integer, newSectionStart: String, newSectionEnd: String, newDelaySeconds: Double, newTotalDelaySeconds: Double): Unit = {
-    //TODO: Consider the section size for the trend as well
     val oldSectionSize = this.sectionEndIndex - this.sectionStartIndex
     this.sectionStartIndex = newSectionStartIndex
     this.sectionEndIndex = newSectionEndIndex
@@ -73,7 +114,12 @@ class Disruption(private var sectionStartIndex: Integer,
     this.delaySeconds = newDelaySeconds
   }
 
-  //    TODO:Extend this to capture all cases
+  /**
+   *
+   * @param that Disruption - to which to compare this disruption
+   * @return Boolean - true if the disruptions are considered as the same
+   *         false otherwise
+   */
   def equals(that: Disruption): Boolean = {
     if (this.sectionStartIndex == that.sectionStartIndex ||
       this.sectionEndIndex == that.sectionEndIndex) {
@@ -88,10 +134,20 @@ class Disruption(private var sectionStartIndex: Integer,
     return false
   }
 
+  /**
+   * It updates the disruption and marks it as cleared
+   *
+   * @param date Date - the date and time when this disruption has been cleared
+   */
   def clear(date: Date): Unit = {
     updateDBEntry(date)
   }
 
+  /**
+   *
+   * @param route String - the route on which the disruption occurred
+   * @param run Integer - the run on which the disruption occurred
+   */
   def save(route: String, run: Integer): Unit = {
     if (id == null) {
       id = Disruption.getNextId()
@@ -157,27 +213,25 @@ class Disruption(private var sectionStartIndex: Integer,
   }
 }
 
+/**
+ * Contains some static methods
+ */
 object Disruption {
 
-  private var id: Integer = null
   //  NRT delay classifications:
   //  Moderate - 0 - 20 min
   //  Serious - 21 - 40 min
   //  Severe - 41 - 60 min
-
-  //  final val SectionModerate: Integer = 10
-  //  final val SectionSerious: Integer = 20
-  //  final val SectionSevere: Integer = 40
-  //
-  //  final val RouteSerious: Integer = 30
-  //  //40
-  //  final val RouteSevere: Integer = 50 //60
+  private var id: Integer = null
 
   final val TrendImproving = 1
   final val TrendStable = 0
   final val TrendWorsening = -1
 
-
+  /**
+   *
+   * @return Integer - the next id to be used for a disruption
+   */
   def getNextId(): Integer = {
     this.synchronized {
       if (id == null) {

@@ -8,6 +8,11 @@ import utility.DBConnectionPool
 
 /**
  * Created by Konstantin on 26/01/2015.
+ *
+ * Class representing a BusStop in TFL bus
+ * network. Currently this is unused, however if
+ * required the functionality is ready to be used.
+ *
  */
 class BusStop(
                private val lbslCode: String,
@@ -44,8 +49,12 @@ object BusStop {
   final val StopArea: Integer = 7
   final val VirtualBusStop: Integer = 8
 
-  final val NumberOfFields: Integer = 9
-
+  /**
+   * Static method for initialising a bus stop
+   * from the database.
+   * @param lbslCode String - the LBSL code of the bus stop
+   * @return - initialised BusStop
+   */
   def getBusStop(lbslCode: String): BusStop = {
     var busStop: BusStop = null
     var connection: Connection = null

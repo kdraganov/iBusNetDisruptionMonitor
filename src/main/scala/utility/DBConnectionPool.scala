@@ -10,6 +10,8 @@ import scala.xml.XML
 
 /**
  * Created by Konstantin on 17/03/2015.
+ *
+ * Class representing a Database connection pool.
  */
 class DBConnectionPool(private val host: String,
                        private val port: Integer,
@@ -28,59 +30,39 @@ class DBConnectionPool(private val host: String,
   pool.setInitialConnections(2)
   pool.setPortNumber(port)
 
+  /**
+   *
+   * @return Connection - a connection from the pool.
+   */
   def getConnection(): Connection = {
     return pool.getConnection()
   }
 
+  /**
+   *
+   * @param maxConnections Integer - the max number of simultaneous connections
+   */
   def setMaxConnections(maxConnections: Integer): Unit = {
     pool.setMaxConnections(maxConnections)
   }
 
+  /**
+   *
+   * @return Integer - the max number of simultaneous connections
+   */
   def getMaxConnections(): Integer = pool.getMaxConnections
 
+  /**
+   * Closes the pool.
+   */
   def close(): Unit = {
     pool.close()
   }
-
-  //  val driver = "org.postgresql.Driver"
-  //  //"org.postgresql.jdbc.Driver" //
-  //  val url = "jdbc:postgresql://localhost:5432";
-  //  val port = "5432"
-  //  val user = "postgres"
-  //  val password = "299188"
-
-  //  Class.forName(driver);
-  //  var connection: Connection = DriverManager.getConnection(url, user, password)
-
-  //  private def setPool(): Jdbc3PoolingDataSource = {
-  //    val source = new Jdbc3PoolingDataSource()
-  //    source.setDataSourceName(name)
-  //    source.setServerName(host)
-  //    source.setDatabaseName(db)
-  //    source.setUser(user)
-  //    source.setPassword(password)
-  //    source.setMaxConnections(5)
-  //    return source
-  //  }
-
-  //  def init(): PooledConnection = {
-  //    val props = new Properties()
-  //    props.put(Context.INITIAL_CONTEXT_FACTORY, "org.postgresql.jdbc3.Jdbc3PoolingDataSource")
-  //    props.setProperty(Context.SECURITY_PRINCIPAL, user);
-  //    props.setProperty(Context.SECURITY_CREDENTIALS, password);
-  //    //    props.setProperty("ssl", "true");
-  //    props.put(Context.PROVIDER_URL, url);
-  //    val context = new InitialContext(props)
-  //    val dataSource: ConnectionPoolDataSource = context.lookup("iBusDisruption").asInstanceOf[ConnectionPoolDataSource]
-  //    dataSource.getPooledConnection
-  //  }
-
-  //  def closeConnection: Unit = {
-  //    connection.close()
-  //  }
-
 }
 
+/**
+ * Static class representing a Database pool used accross the system.
+ */
 object DBConnectionPool {
 
   private var sourcePool: DBConnectionPool = null
@@ -91,6 +73,15 @@ object DBConnectionPool {
   var password = ""
   var maxPoolSize = 5
 
+  /**
+   * Creates the pool
+   * @param host String - the host address
+   * @param port Integer - the port used to connect to the database
+   * @param db String - the database name
+   * @param user String - the username
+   * @param password String - the password
+   * @param name String - name for the pool
+   */
   def createPool(host: String,
                  port: Integer,
                  db: String,
@@ -101,6 +92,10 @@ object DBConnectionPool {
     sourcePool = new DBConnectionPool(host, port, db, user, password)
   }
 
+  /**
+   *
+   * @param connectionSettingsPath String - the path to the file with the settings for connecting to the database
+   */
   def createPool(connectionSettingsPath: String): Unit = {
     val file = new File(connectionSettingsPath)
     if (!file.exists() || !file.isFile || !file.canRead) {
@@ -123,11 +118,11 @@ object DBConnectionPool {
     sourcePool = pool
   }
 
-  def setMaxPoolSize(poolSize: Integer): Unit ={
+  def setMaxPoolSize(poolSize: Integer): Unit = {
     sourcePool.setMaxConnections(poolSize)
   }
 
-  def getMaxPoolSize(): Integer ={
+  def getMaxPoolSize(): Integer = {
     sourcePool.getMaxConnections()
   }
 

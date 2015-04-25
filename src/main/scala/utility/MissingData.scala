@@ -6,6 +6,11 @@ import scala.collection.mutable.HashMap
 
 /**
  * Created by Konstantin on 18/02/2015.
+ *
+ * Static class used for recording any missing
+ * routes or bus stops which are observed in
+ * the feed files, but are missing the bus
+ * network data available on TFL Open Data website.
  */
 
 object MissingData {

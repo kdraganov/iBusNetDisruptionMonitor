@@ -10,6 +10,9 @@ import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 /**
  * Created by Konstantin on 22/03/2015.
+ *
+ * Class representation of a section (a consecutive
+ * pair of stops along a given route and run).
  */
 class Section(private val id: Integer, private val sequence: Integer, private val fromStop: String, private val toStop: String) {
 
@@ -48,6 +51,7 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   //  }
 
   def clear(): Unit = {
+    busObservationMap.clear()
     observationList.clear()
     update = true
     delay = 0
@@ -119,8 +123,8 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   private def getWeight(itemIndex: Integer): Double = {
-    return itemIndex + 1
-    //    return Math.pow(2, itemIndex + 1)
+    //    return itemIndex + 1
+    return Math.pow(2, itemIndex + 1)
   }
 
   //Exponential moving average
