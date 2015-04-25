@@ -6,7 +6,7 @@ import java.util.Date
 import _root_.utility.Environment
 import org.slf4j.LoggerFactory
 
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, HashMap}
 
 /**
  * Created by Konstantin on 22/03/2015.
@@ -19,16 +19,33 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   private var latestObservationDate: Date = null
 
   private var observationList: ArrayBuffer[Tuple2[Double, Date]] = new ArrayBuffer[Tuple2[Double, Date]]()
+  private val busObservationMap: HashMap[Integer, Integer] = new HashMap[Integer, Integer]()
 
   def getLatestObservationTime(): Date = {
     isUptodate
     latestObservationDate
   }
 
-  def addObservation(observation: Tuple2[Double, Date]): Unit = {
-    observationList.append(observation)
+  def addObservation(vehicleId: Integer, lostTime: Double, date: Date): Unit = {
+    val index = busObservationMap.getOrElse(vehicleId, null)
+    if (index == null) {
+      busObservationMap.put(vehicleId, observationList.length)
+      observationList.append(Tuple2[Double, Date](lostTime, date))
+    } else {
+      val temp = observationList(index)
+      if (date.after(temp._2)) {
+        observationList(index) = Tuple2[Double, Date](temp._1 + lostTime, date)
+      } else {
+        observationList(index) = Tuple2[Double, Date](temp._1 + lostTime, temp._2)
+      }
+    }
     update = true
   }
+
+  //  def addObservation(observation: Tuple3[Double, Date, Integer]): Unit = {
+  //    observationList.append(observation)
+  //    update = true
+  //  }
 
   def clear(): Unit = {
     observationList.clear()
@@ -49,7 +66,7 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   private def isUptodate(): Boolean = {
-    if (update && observationList.size > 1) {
+    if (update && observationList.size > 0) {
       observationList = observationList.sortBy(_._2)
       latestObservationDate = observationList.last._2
       return false

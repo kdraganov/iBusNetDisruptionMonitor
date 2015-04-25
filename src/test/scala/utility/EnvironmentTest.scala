@@ -18,6 +18,7 @@ class EnvironmentTest extends UnitSpec {
   before {
     DBConnectionPool.createPool(dbConnectionSettingsPath)
     Environment.init()
+    Environment.setLatestFeedTimeOfData(new Date(0))
   }
 
   after {

@@ -150,7 +150,8 @@ class Run(private val routeNumber: String, private val run: Integer) {
         val numberOfSections = (lastStopIndex - prevLastStopIndex) + 1
         val lostTimePerSection = (observation.getScheduleDeviation - prevObservation.getScheduleDeviation) / numberOfSections
         for (i <- prevLastStopIndex to Math.min(lastStopIndex, sections.size - 1)) {
-          sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
+          sections(i).addObservation(observation.getVehicleId, lostTimePerSection, observation.getTimeOfData)
+//          sections(i).addObservation(new Tuple2(lostTimePerSection, observation.getTimeOfData))
         }
         return true
       }

@@ -13,7 +13,7 @@ import scala.main.UnitSpec
 class SectionTest extends UnitSpec {
 
   //Need to update the data if window size and weights change - currently assumed window size = 5 and normal sequential weights
-  private val observations: Array[Tuple2[Double, Date]] = new Array[Tuple2[Double, Date]](5)
+  private val observations: Array[Tuple3[Integer, Double, Date]] = new Array[Tuple3[Integer, Double, Date]](5)
   private val id = 1
   private val sequence = 1
   private val fromStop = "14456"
@@ -27,7 +27,7 @@ class SectionTest extends UnitSpec {
     val observationValues: Array[Double] = Array[Double](89, 856, 1349, 533, 579) //expected WMA 725
     val calendar = Calendar.getInstance()
     for (i <- 0 until observations.length) {
-      observations(i) = new Tuple2(observationValues(i), calendar.getTime)
+      observations(i) = new Tuple3(i, observationValues(i), calendar.getTime)
       calendar.add(Calendar.MINUTE, +5)
     }
 
@@ -44,7 +44,7 @@ class SectionTest extends UnitSpec {
   test("GetDelay") {
     assert(section.getDelay() == 0)
     for (observation <- observations) {
-      section.addObservation(observation)
+      section.addObservation(observation._1, observation._2, observation._3)
     }
     assert(section.getDelay() == 725)
   }
@@ -52,15 +52,15 @@ class SectionTest extends UnitSpec {
   test("LatestObservationTime") {
     assert(section.getLatestObservationTime() == null)
     for (observation <- observations) {
-      section.addObservation(observation)
+      section.addObservation(observation._1, observation._2, observation._3)
     }
-    assert(section.getLatestObservationTime() == observations(4)._2)
+    assert(section.getLatestObservationTime() == observations(4)._3)
   }
 
   test("Clear") {
     assert(section.getLatestObservationTime() == null)
     for (observation <- observations) {
-      section.addObservation(observation)
+      section.addObservation(observation._1, observation._2, observation._3)
     }
     section.clear()
     assert(section.getLatestObservationTime() == null)

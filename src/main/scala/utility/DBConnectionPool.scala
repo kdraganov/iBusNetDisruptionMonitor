@@ -36,6 +36,8 @@ class DBConnectionPool(private val host: String,
     pool.setMaxConnections(maxConnections)
   }
 
+  def getMaxConnections(): Integer = pool.getMaxConnections
+
   def close(): Unit = {
     pool.close()
   }
@@ -119,6 +121,14 @@ object DBConnectionPool {
       sourcePool.close
     }
     sourcePool = pool
+  }
+
+  def setMaxPoolSize(poolSize: Integer): Unit ={
+    sourcePool.setMaxConnections(poolSize)
+  }
+
+  def getMaxPoolSize(): Integer ={
+    sourcePool.getMaxConnections()
   }
 
   def getConnection(): Connection = {
