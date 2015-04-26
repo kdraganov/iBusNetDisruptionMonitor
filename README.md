@@ -7,14 +7,18 @@ Author: Konstantin Draganov
 Prototypical Tool for Real-time visualisation of bus delays in London
 
 Installation
+
 The disruption engine installation consists of the following steps:
-*1. Obtain the jar package of the tool.
-*2. Obtain and have all of the above dependencies in the CLASSPATH of
+
+* Obtain the jar package of the tool.
+* Obtain and have all of the above dependencies in the CLASSPATH of
 the system.
-*3. Set up a database using the provided database script or dump.
-*4. Create XML file which to contain the connection settings to the respective
+* Set up a database using the provided database script or dump.
+* Create XML file which to contain the connection settings to the respective
 database.
+
 Below is the list of the required libraries and dependencies:
+
 * JRE 8 - the library and documentation can be found on http://www.
 oracle.com/technetwork/java/javase/documentation/index.html.
 * Scala Library 2.11.5 - http://www.scala-lang.org/news/2.11.5.
@@ -32,10 +36,14 @@ respective longitude/latitude values. The library was obtained from
 http://www.jstott.me.uk/jcoord/.
 * ScalaTest 2.2.4 - library was used for testing. Instructions and the library
 files can be found in http://www.scalatest.org/download.
+
 Execution
+
 In order to run the application you simply need to execute the iBusDisruptionMonitor.
 jar with the following command from the command line:
-<tt>java −j a r iBusDisruptionMonitor . j a r [ path ]</tt>
+
+<tt>java −jar iBusDisruptionMonitor . jar [ path ]</tt>
+
 In the above command you need to substitute [path] with the path to an XML
 file containing the connection settings to a database. The XML file should
 have the following structure:
