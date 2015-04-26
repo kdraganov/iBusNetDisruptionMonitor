@@ -1,0 +1,549 @@
+--
+-- PostgreSQL database dump
+--
+
+-- Dumped from database version 9.4.1
+-- Dumped by pg_dump version 9.4.1
+-- Started on 2015-04-26 13:04:12
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+DROP DATABASE "iBusDisruption";
+--
+-- TOC entry 2077 (class 1262 OID 16399)
+-- Name: iBusDisruption; Type: DATABASE; Schema: -; Owner: -
+--
+
+CREATE DATABASE "iBusDisruption" WITH TEMPLATE = template0 ENCODING = 'UTF8' LC_COLLATE = 'English_United States.1252' LC_CTYPE = 'English_United States.1252';
+
+
+\connect "iBusDisruption"
+
+SET statement_timeout = 0;
+SET lock_timeout = 0;
+SET client_encoding = 'UTF8';
+SET standard_conforming_strings = on;
+SET check_function_bodies = false;
+SET client_min_messages = warning;
+
+--
+-- TOC entry 5 (class 2615 OID 2200)
+-- Name: public; Type: SCHEMA; Schema: -; Owner: -
+--
+
+CREATE SCHEMA public;
+
+
+--
+-- TOC entry 2078 (class 0 OID 0)
+-- Dependencies: 5
+-- Name: SCHEMA public; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON SCHEMA public IS 'standard public schema';
+
+
+--
+-- TOC entry 187 (class 3079 OID 11855)
+-- Name: plpgsql; Type: EXTENSION; Schema: -; Owner: -
+--
+
+CREATE EXTENSION IF NOT EXISTS plpgsql WITH SCHEMA pg_catalog;
+
+
+--
+-- TOC entry 2079 (class 0 OID 0)
+-- Dependencies: 187
+-- Name: EXTENSION plpgsql; Type: COMMENT; Schema: -; Owner: -
+--
+
+COMMENT ON EXTENSION plpgsql IS 'PL/pgSQL procedural language';
+
+
+SET search_path = public, pg_catalog;
+
+SET default_tablespace = '';
+
+SET default_with_oids = false;
+
+--
+-- TOC entry 174 (class 1259 OID 16414)
+-- Name: BusRouteSequences; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "BusRouteSequences" (
+    route character varying(10) NOT NULL,
+    run smallint NOT NULL,
+    sequence smallint NOT NULL,
+    "busStopLBSLCode" character varying(10)
+);
+
+
+--
+-- TOC entry 173 (class 1259 OID 16408)
+-- Name: BusStops; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "BusStops" (
+    "lbslCode" character varying(10) NOT NULL,
+    code character varying(10),
+    "naptanAtcoCode" character varying(20),
+    name character varying(100),
+    "locationEasting" integer,
+    "locationNorthing" integer,
+    heading character varying(4),
+    "stopArea" character varying(15),
+    virtual boolean
+);
+
+
+--
+-- TOC entry 176 (class 1259 OID 16434)
+-- Name: DisruptionComments; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "DisruptionComments" (
+    id integer NOT NULL,
+    "disruptionId" integer,
+    comment text,
+    "operatorId" integer,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL
+);
+
+
+--
+-- TOC entry 186 (class 1259 OID 24731)
+-- Name: DisruptionComments_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "DisruptionComments_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2080 (class 0 OID 0)
+-- Dependencies: 186
+-- Name: DisruptionComments_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "DisruptionComments_id_seq" OWNED BY "DisruptionComments".id;
+
+
+--
+-- TOC entry 175 (class 1259 OID 16431)
+-- Name: Disruptions; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "Disruptions" (
+    id integer NOT NULL,
+    "fromStopLBSLCode" character varying(10),
+    "toStopLBSLCode" character varying(10),
+    route character varying(10),
+    run smallint,
+    "delayInSeconds" double precision,
+    "firstDetectedAt" timestamp with time zone,
+    "clearedAt" timestamp with time zone,
+    hide boolean DEFAULT false NOT NULL,
+    trend smallint DEFAULT 0 NOT NULL,
+    "routeTotalDelayInSeconds" double precision
+);
+
+
+--
+-- TOC entry 183 (class 1259 OID 24637)
+-- Name: Disruptions_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "Disruptions_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2081 (class 0 OID 0)
+-- Dependencies: 183
+-- Name: Disruptions_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "Disruptions_id_seq" OWNED BY "Disruptions".id;
+
+
+--
+-- TOC entry 172 (class 1259 OID 16400)
+-- Name: EngineConfigurations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "EngineConfigurations" (
+    key character varying(60) NOT NULL,
+    value character varying(500),
+    editable boolean DEFAULT false NOT NULL
+);
+
+
+--
+-- TOC entry 178 (class 1259 OID 16445)
+-- Name: Operators; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "Operators" (
+    username character varying(100),
+    password character varying(128),
+    admin boolean,
+    id integer NOT NULL
+);
+
+
+--
+-- TOC entry 177 (class 1259 OID 16443)
+-- Name: Operators_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "Operators_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2082 (class 0 OID 0)
+-- Dependencies: 177
+-- Name: Operators_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "Operators_id_seq" OWNED BY "Operators".id;
+
+
+--
+-- TOC entry 180 (class 1259 OID 24611)
+-- Name: Sections; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "Sections" (
+    id integer NOT NULL,
+    route character varying(10),
+    run smallint,
+    "startStopLBSLCode" character varying(10),
+    "endStopLBSLCode" character varying(10),
+    sequence smallint
+);
+
+
+--
+-- TOC entry 182 (class 1259 OID 24625)
+-- Name: SectionsLostTime; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE "SectionsLostTime" (
+    "sectionId" integer NOT NULL,
+    "lostTimeInSeconds" integer,
+    "timestamp" timestamp with time zone DEFAULT now() NOT NULL,
+    "serialId" integer NOT NULL,
+    "numberOfObservations" integer DEFAULT 0 NOT NULL
+);
+
+
+--
+-- TOC entry 181 (class 1259 OID 24623)
+-- Name: SectionsLostTime_sectionId_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "SectionsLostTime_sectionId_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2083 (class 0 OID 0)
+-- Dependencies: 181
+-- Name: SectionsLostTime_sectionId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "SectionsLostTime_sectionId_seq" OWNED BY "SectionsLostTime"."sectionId";
+
+
+--
+-- TOC entry 184 (class 1259 OID 24691)
+-- Name: SectionsLostTime_serialId_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "SectionsLostTime_serialId_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2084 (class 0 OID 0)
+-- Dependencies: 184
+-- Name: SectionsLostTime_serialId_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "SectionsLostTime_serialId_seq" OWNED BY "SectionsLostTime"."serialId";
+
+
+--
+-- TOC entry 179 (class 1259 OID 24609)
+-- Name: Sections_id_seq; Type: SEQUENCE; Schema: public; Owner: -
+--
+
+CREATE SEQUENCE "Sections_id_seq"
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+--
+-- TOC entry 2085 (class 0 OID 0)
+-- Dependencies: 179
+-- Name: Sections_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+--
+
+ALTER SEQUENCE "Sections_id_seq" OWNED BY "Sections".id;
+
+
+--
+-- TOC entry 185 (class 1259 OID 24699)
+-- Name: schema_migrations; Type: TABLE; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE TABLE schema_migrations (
+    version character varying NOT NULL
+);
+
+
+--
+-- TOC entry 1930 (class 2604 OID 24733)
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "DisruptionComments" ALTER COLUMN id SET DEFAULT nextval('"DisruptionComments_id_seq"'::regclass);
+
+
+--
+-- TOC entry 1927 (class 2604 OID 24639)
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Disruptions" ALTER COLUMN id SET DEFAULT nextval('"Disruptions_id_seq"'::regclass);
+
+
+--
+-- TOC entry 1932 (class 2604 OID 16448)
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Operators" ALTER COLUMN id SET DEFAULT nextval('"Operators_id_seq"'::regclass);
+
+
+--
+-- TOC entry 1933 (class 2604 OID 24614)
+-- Name: id; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Sections" ALTER COLUMN id SET DEFAULT nextval('"Sections_id_seq"'::regclass);
+
+
+--
+-- TOC entry 1934 (class 2604 OID 24628)
+-- Name: sectionId; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "SectionsLostTime" ALTER COLUMN "sectionId" SET DEFAULT nextval('"SectionsLostTime_sectionId_seq"'::regclass);
+
+
+--
+-- TOC entry 1936 (class 2604 OID 24693)
+-- Name: serialId; Type: DEFAULT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "SectionsLostTime" ALTER COLUMN "serialId" SET DEFAULT nextval('"SectionsLostTime_serialId_seq"'::regclass);
+
+
+--
+-- TOC entry 1945 (class 2606 OID 24648)
+-- Name: pk_Disruptions; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "Disruptions"
+    ADD CONSTRAINT "pk_Disruptions" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 1953 (class 2606 OID 24698)
+-- Name: pk_SectionLostTime; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "SectionsLostTime"
+    ADD CONSTRAINT "pk_SectionLostTime" PRIMARY KEY ("serialId");
+
+
+--
+-- TOC entry 1949 (class 2606 OID 16450)
+-- Name: pk_UserId; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "Operators"
+    ADD CONSTRAINT "pk_UserId" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 1947 (class 2606 OID 24748)
+-- Name: pk_disruptionComments; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "DisruptionComments"
+    ADD CONSTRAINT "pk_disruptionComments" PRIMARY KEY (id);
+
+
+--
+-- TOC entry 1943 (class 2606 OID 16425)
+-- Name: pk_id; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "BusRouteSequences"
+    ADD CONSTRAINT pk_id PRIMARY KEY (route, run, sequence);
+
+
+--
+-- TOC entry 1939 (class 2606 OID 16407)
+-- Name: pk_key; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "EngineConfigurations"
+    ADD CONSTRAINT pk_key PRIMARY KEY (key);
+
+
+--
+-- TOC entry 1941 (class 2606 OID 16412)
+-- Name: pk_lbslCode; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "BusStops"
+    ADD CONSTRAINT "pk_lbslCode" PRIMARY KEY ("lbslCode");
+
+
+--
+-- TOC entry 1951 (class 2606 OID 24616)
+-- Name: pk_sections; Type: CONSTRAINT; Schema: public; Owner: -; Tablespace: 
+--
+
+ALTER TABLE ONLY "Sections"
+    ADD CONSTRAINT pk_sections PRIMARY KEY (id);
+
+
+--
+-- TOC entry 1954 (class 1259 OID 24705)
+-- Name: unique_schema_migrations; Type: INDEX; Schema: public; Owner: -; Tablespace: 
+--
+
+CREATE UNIQUE INDEX unique_schema_migrations ON schema_migrations USING btree (version);
+
+
+--
+-- TOC entry 1958 (class 2606 OID 24749)
+-- Name: fk_DisruptionCommentsDisruptionId; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "DisruptionComments"
+    ADD CONSTRAINT "fk_DisruptionCommentsDisruptionId" FOREIGN KEY ("disruptionId") REFERENCES "Disruptions"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1956 (class 2606 OID 24706)
+-- Name: fk_DisruptionFromBusStop; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Disruptions"
+    ADD CONSTRAINT "fk_DisruptionFromBusStop" FOREIGN KEY ("fromStopLBSLCode") REFERENCES "BusStops"("lbslCode") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1957 (class 2606 OID 24711)
+-- Name: fk_DisruptionToBusStop; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Disruptions"
+    ADD CONSTRAINT "fk_DisruptionToBusStop" FOREIGN KEY ("toStopLBSLCode") REFERENCES "BusStops"("lbslCode") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1962 (class 2606 OID 24726)
+-- Name: fk_SectionBusRouteSequence; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Sections"
+    ADD CONSTRAINT "fk_SectionBusRouteSequence" FOREIGN KEY (route, run, sequence) REFERENCES "BusRouteSequences"(route, run, sequence) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1961 (class 2606 OID 24721)
+-- Name: fk_SectionEndStop; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Sections"
+    ADD CONSTRAINT "fk_SectionEndStop" FOREIGN KEY ("endStopLBSLCode") REFERENCES "BusStops"("lbslCode") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1963 (class 2606 OID 24632)
+-- Name: fk_SectionIdLostTime; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "SectionsLostTime"
+    ADD CONSTRAINT "fk_SectionIdLostTime" FOREIGN KEY ("sectionId") REFERENCES "Sections"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1960 (class 2606 OID 24716)
+-- Name: fk_SectionStartStop; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "Sections"
+    ADD CONSTRAINT "fk_SectionStartStop" FOREIGN KEY ("startStopLBSLCode") REFERENCES "BusStops"("lbslCode") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1955 (class 2606 OID 16426)
+-- Name: fk_busStop; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "BusRouteSequences"
+    ADD CONSTRAINT "fk_busStop" FOREIGN KEY ("busStopLBSLCode") REFERENCES "BusStops"("lbslCode") ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+--
+-- TOC entry 1959 (class 2606 OID 24754)
+-- Name: fk_disruptionCommentsOperatorId; Type: FK CONSTRAINT; Schema: public; Owner: -
+--
+
+ALTER TABLE ONLY "DisruptionComments"
+    ADD CONSTRAINT "fk_disruptionCommentsOperatorId" FOREIGN KEY ("operatorId") REFERENCES "Operators"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+
+
+-- Completed on 2015-04-26 13:04:12
+
+--
+-- PostgreSQL database dump complete
+--
+
