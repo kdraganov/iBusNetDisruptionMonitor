@@ -48,11 +48,11 @@ In the above command you need to substitute [path] with the path to an XML
 file containing the connection settings to a database. The XML file should
 have the following structure:
 <tt>
-<?xml version=” 1 . 0 ” encoding=”UTF−8” ?>
+<?xml version=”1.0” encoding=”UTF−8” ?>
 <connection>
 <host>[HOST]</ host>
 <port>[PORT]</ port>
-<database>[ Database name ]</ database>
+<database>[Database name]</ database>
 <user>[USERNAME]</ user>
 <password>[PASSWORD]</password>
 <maxPoolSize>5</maxPoolSize>
