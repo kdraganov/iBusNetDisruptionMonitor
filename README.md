@@ -4,14 +4,54 @@ iBusNet Disruption Monitor
 Author: Konstantin Draganov
 ===========
 
-(SZ-1) Real-time visualisation of bus delays in London
+Prototypical Tool for Real-time visualisation of bus delays in London
 
-A project in collaboration with Transport for London
-
-On any given day, there are up to 9,000 buses on 670 routes running on the streets of London. These buses are operated by a number of independent commercial operating companies, but the network is centrally monitored and overseen by CentreComm. CentreComm is the London buses 24/7 control centre within Transport for London (TfL). From their control room in Palestra House, CentreComm field around 1,200 calls a day on emergency issues, disruption information and other relevant incidents. A team of 50 people working on a shift basis then needs to identify the causes of these problems and propose and implement diversions or other interventions to ensure a safe and efficient journey for bus customers.
-
-CentreComm have access to large amounts of real-time data about buses, their locations and timings. However, this data currently must be manually analysed by a CentreComm officer to identify likely causes and possible interventions. As a result, CentreComm rely heavily on calls from bus operators and drivers in focusing their attention on particular routes and particular problems. The lack of pre-processed information creates a lack of disruption awareness and can potentially lead to the team focusing on the wrong issues; just because a particular operator "shouts the loudest".
-
-This final-year project will develop a prototypical tool analysing CentreComm bus data and providing suitable visualisations to highlight the key hotspots that work should focus on. Ideally, such analysis would update in real time as more data comes into the system. Data will be made available by CentreComm. An analysis of what visualisations would be most helpful is part of the requirements analysis to be undertaken.
-
-This is a challenging, but potentially very rewarding project, with a very good chance (if done well) of being used in CentreComm practice and influencing the way of work at CentreComm. CentreComm will provide data as well as some interaction with control-room staff to ensure the prototype delivers the best solution possible.
+Installation
+The disruption engine installation consists of the following steps:
+*1. Obtain the jar package of the tool.
+*2. Obtain and have all of the above dependencies in the CLASSPATH of
+the system.
+*3. Set up a database using the provided database script or dump.
+*4. Create XML file which to contain the connection settings to the respective
+database.
+Below is the list of the required libraries and dependencies:
+* JRE 8 - the library and documentation can be found on http://www.
+oracle.com/technetwork/java/javase/documentation/index.html.
+* Scala Library 2.11.5 - http://www.scala-lang.org/news/2.11.5.
+* Scala XML 2.11-1.0.2 - is used for working with XML files.
+* JDBC PostgreSQL - PostgreSQL 9.0 JDBC3 and PostgreSQL 9.4 JDBC4
+are both used which can be found in https://jdbc.postgresql.org/
+download.html.
+* SLF4J 1.6.4 - is used for logging. Documentation and the library can
+be found here http://www.slf4j.org/. It also requires the bellow two
+libraries in order to work.
+* Logback 1.0.1 - is used for logging http://logback.qos.ch/. The engine
+makes use of the classic and core packages both version 1.0.1.
+* JCoord-1.0 - is used for converting easting/northing locations to the
+respective longitude/latitude values. The library was obtained from
+http://www.jstott.me.uk/jcoord/.
+* ScalaTest 2.2.4 - library was used for testing. Instructions and the library
+files can be found in http://www.scalatest.org/download.
+Execution
+In order to run the application you simply need to execute the iBusDisruptionMonitor.
+jar with the following command from the command line:
+<tt>java −j a r iBusDisruptionMonitor . j a r [ path ]</tt>
+In the above command you need to substitute [path] with the path to an XML
+file containing the connection settings to a database. The XML file should
+have the following structure:
+<tt>
+<?xml version=” 1 . 0 ” encoding=”UTF−8” ?>
+<connection>
+<host>[HOST]</ host>
+<port>[PORT]</ port>
+<database>[ Database name ]</ database>
+<user>[USERNAME]</ user>
+<password>[PASSWORD]</password>
+<maxPoolSize>5</maxPoolSize>
+</ connection>
+</tt>
+In this XML file you need to substitute everything between the square brackets
+with the respective values for your configuration.
+Executing the above command will start the tool, but do make sure you
+have set up the right configuration settings in the database before running the
+application.
