@@ -54,12 +54,6 @@ class iBusMonitor() extends Thread {
       }
       key.reset()
 
-      try {
-        Thread.sleep(500)
-      } catch {
-        case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
-      }
-
       //checks for any unprocessed files
       for (file <- Environment.getFeedDirectory().listFiles(feedFilenameFilter) if file.isFile) {
         processFile(file)
@@ -74,12 +68,7 @@ class iBusMonitor() extends Thread {
         }
         updateNetwork = false
       }
-
-      try {
-        Thread.sleep(Environment.getMonitorThreadSleepInterval())
-      } catch {
-        case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
-      }
+      nap()
     }
   }
 
@@ -90,12 +79,21 @@ class iBusMonitor() extends Thread {
         try {
           processFeed(file)
         } catch {
-          case e: FileNotFoundException => logger.warn("Exception:", e)
+          case e: FileNotFoundException => nap(1000)
+            logger.info("File {} not accessible - sleeping for 1s." , file.getAbsolutePath) //logger.warn("Exception:", e)
           case e: Exception => logger.error("TERMINATING - iBusMonitorThread interrupted:", e)
             System.exit(-1)
         }
       }
       updateNetwork = true
+    }
+  }
+
+  private def nap(timeMilliSeconds: Long = Environment.getMonitorThreadSleepInterval()): Unit = {
+    try {
+      Thread.sleep(timeMilliSeconds)
+    } catch {
+      case e: InterruptedException => logger.error("iBusMonitorThread interrupted:", e)
     }
   }
 
