@@ -21,6 +21,11 @@ class Run(private val routeNumber: String, private val run: Integer) {
   private val prevDisruptions: ArrayBuffer[Disruption] = new ArrayBuffer[Disruption]()
   private val sections: ArrayBuffer[Section] = new ArrayBuffer[Section]()
 
+  /**
+   * Method which initialises the Run by
+   * loading all information from the database
+   * and generating and initialising its sections.
+   */
   def init(): Unit = {
     var connection: Connection = null
     var preparedStatement: PreparedStatement = null
@@ -53,6 +58,9 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
+  /**
+   * Method for detecting any disruptions along the run.
+   */
   def detectDisruptions(): Unit = {
     prevDisruptions.clear()
     disruptions.copyToBuffer(prevDisruptions)
@@ -88,10 +96,6 @@ class Run(private val routeNumber: String, private val run: Integer) {
         findDisruptedSections(Environment.getSectionMinThreshold / 2)
       }
 
-      if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
-        findDisruptedSections(90)
-      }
-
       //TODO: BEGIN Remove - just for testing purposes
       if (disruptions.isEmpty && cumulativeLostTime > Environment.getRouteSeriousThreshold) {
         var max: Double = 0
@@ -107,7 +111,10 @@ class Run(private val routeNumber: String, private val run: Integer) {
     }
   }
 
-
+  /**
+   * Method which checks the run for any disrupted sections.
+   * @param sectionMinThreshold Integer - the minimum section time loss threshold
+   */
   private def findDisruptedSections(sectionMinThreshold: Integer): Unit = {
     var sectionStartStopIndex: Integer = null
     var disruptionSeconds: Double = 0
@@ -129,6 +136,12 @@ class Run(private val routeNumber: String, private val run: Integer) {
         }
       }
 
+    }
+    if (sectionStartStopIndex != null) {
+      // end of sectionDisruption
+      if (disruptionSeconds >= Environment.getSectionMediumThreshold) {
+        addDisruption(sectionStartStopIndex, sections.length - 1, disruptionSeconds)
+      }
     }
   }
 
@@ -166,6 +179,9 @@ class Run(private val routeNumber: String, private val run: Integer) {
     return false
   }
 
+  /**
+   * Method for clearing the data stored for each section.
+   */
   def clearSections(): Unit = {
     for (section <- sections) {
       section.clear()

@@ -29,6 +29,12 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     latestObservationDate
   }
 
+  /**
+   *
+   * @param vehicleId Integer - the unique vehicle id
+   * @param lostTime Double - the lost time
+   * @param date Date - the date time of the later observation
+   */
   def addObservation(vehicleId: Integer, lostTime: Double, date: Date): Unit = {
     val index = busObservationMap.getOrElse(vehicleId, null)
     if (index == null) {
@@ -45,11 +51,6 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     update = true
   }
 
-  //  def addObservation(observation: Tuple3[Double, Date, Integer]): Unit = {
-  //    observationList.append(observation)
-  //    update = true
-  //  }
-
   def clear(): Unit = {
     busObservationMap.clear()
     observationList.clear()
@@ -61,11 +62,6 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     if (!isUptodate) {
       calculateDelay
     }
-    //    if (update && observationList.size > 1) {
-    //      observationList = observationList.sortBy(_._2)
-    //      latestObservationDate = observationList.last._2
-    //      calculateDelay
-    //    }
     return delay
   }
 
@@ -80,7 +76,10 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     return true
   }
 
-
+  /**
+   * Saving the section time loss for the section in the database.
+   * @param date Date
+   */
   def save(date: Date): Unit = {
     val timestamp = new Timestamp(date.getTime)
     var preparedStatement: PreparedStatement = null
@@ -123,8 +122,8 @@ class Section(private val id: Integer, private val sequence: Integer, private va
   }
 
   private def getWeight(itemIndex: Integer): Double = {
-    //    return itemIndex + 1
-    return Math.pow(2, itemIndex + 1)
+    return itemIndex + 1
+    //    return Math.pow(2, itemIndex + 1)
   }
 
   //Exponential moving average
