@@ -102,10 +102,14 @@ class Section(private val id: Integer, private val sequence: Integer, private va
 
   private def calculateDelay(): Unit = {
     WMA()
+    //Here we can use Exponentially Weighted Moving Average instead
     //    doubleExponentialSmoothing()
   }
 
-  //Weighted moving average of the data
+  /**
+   * Calculates the WMA for the time series data
+   * @param windowSize Integer - the window size of the moving average
+   */
   private def WMA(windowSize: Integer = Environment.getMovingAverageWindowSize()): Unit = {
     var weightedSum: Double = 0
     var totalWeight: Double = 0
@@ -121,11 +125,17 @@ class Section(private val id: Integer, private val sequence: Integer, private va
     }
   }
 
+  /**
+   *
+   * @param itemIndex Integer - the index representing the sequence of the data point
+   * @return Double - the weight for the given index
+   */
   private def getWeight(itemIndex: Integer): Double = {
     return itemIndex + 1
     //    return Math.pow(2, itemIndex + 1)
   }
 
+  //Bellow two methods used only for testing and comparison
   //Exponential moving average
   private def singleExponentialSmoothing(): Unit = {
     var forecast = observationList(0)._1
