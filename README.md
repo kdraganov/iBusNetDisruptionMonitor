@@ -1,22 +1,25 @@
-iBusNet Disruption Monitor
+iBus Disruption Monitor Engine
 ===========
 
 Author: Konstantin Draganov
 ===========
 
-Prototypical Tool for Real-time visualisation of bus delays in London
+### About
+This is a prototypical tool for Real-time visualisation of bus delays in London.
+It has been developed as part of my final year MSci Computer Science project supervised by Dr. Steffen Zschaler (http://steffen-zschaler.de/) and it is in collaboration with TFL.
 
-Installation
+###Installation
 
 The disruption engine installation consists of the following steps:
 
-* Obtain the jar package of the tool.
-* Obtain and have all of the above dependencies in the CLASSPATH of
+1. Obtain the jar package of the tool. Alternatively download source and compile JDK 8 would be required in that case.
+2. Obtain and have all of the above dependencies in the CLASSPATH of
 the system.
-* Set up a database using the provided database script or dump.
-* Create XML file which to contain the connection settings to the respective
+3. Set up a database using the provided database script or dump. Need to also configure the Engine inside the EngineConfiguration table.
+4. Create XML file which to contain the connection settings to the respective
 database.
 
+###Dependencies
 Below is the list of the required libraries and dependencies:
 
 * JRE 8 - the library and documentation can be found on http://www.
@@ -37,7 +40,7 @@ http://www.jstott.me.uk/jcoord/.
 * ScalaTest 2.2.4 - library was used for testing. Instructions and the library
 files can be found in http://www.scalatest.org/download.
 
-Execution
+###Execution
 
 In order to run the application you simply need to execute the iBusDisruptionMonitor.
 jar with the following command from the command line:
@@ -47,8 +50,8 @@ jar with the following command from the command line:
 In the above command you need to substitute [path] with the path to an XML
 file containing the connection settings to a database. The XML file should
 have the following structure:
-<tt>
-<?xml version=”1.0” encoding=”UTF−8” ?>
+```xml
+<?xml version=”1.0” encoding=”UTF−8” ?></tt>
 <connection>
 <host>[HOST]</ host>
 <port>[PORT]</ port>
@@ -57,15 +60,19 @@ have the following structure:
 <password>[PASSWORD]</password>
 <maxPoolSize>5</maxPoolSize>
 </ connection>
-</tt>
+```
 In this XML file you need to substitute everything between the square brackets
 with the respective values for your configuration.
 Executing the above command will start the tool, but do make sure you
 have set up the right configuration settings in the database before running the
 application.
 
-Simulation
+For an up to date list of bus stops and bus routes please check http://www.tfl.gov.uk/info-for/open-data-users/our-feeds?intcmp=3671
 
-An executable which enables the feed file simulation can be found the repository.
-To run it simply execute it by providing as an argument the path to your XML db connection
-settings file. You also need to set up the proper directories in the database.
+###Simulation
+
+An executable (iBusMonitorFeedSimulation.jar) which enables the feed file simulation can be found the repository.
+To run it simply execute it by providing as an argument the path to your XML db connection (as for the Engine itself)
+settings file. You also need to set up the proper source directories in the database.
+
+For any questions or problems related to this repository, please feel free to email on konstantinvld@gmail.com
