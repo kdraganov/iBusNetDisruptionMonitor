@@ -63,3 +63,9 @@ with the respective values for your configuration.
 Executing the above command will start the tool, but do make sure you
 have set up the right configuration settings in the database before running the
 application.
+
+Simulation
+
+An executable which enables the feed file simulation can be found the repository.
+To run it simply execute it by providing as an argument the path to your XML db connection
+settings file. You also need to set up the proper directories in the database.
